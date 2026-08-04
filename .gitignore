@@ -1,0 +1,19 @@
+# ── Large generated outputs (reproducible by re-running the notebooks) ─────
+Integrated_Outputs/*.tif
+Integrated_Outputs/*.parquet
+Model_Outputs/*.tif
+
+# Keep the small, shareable results (must come after the excludes above, and
+# the large sample CSV must be re-excluded after this wildcard include):
+!Integrated_Outputs/*.csv
+!Integrated_Outputs/*.png
+!Model_Outputs/*.png
+!Model_Outputs/*.json
+Integrated_Outputs/Integrated_FireRisk_Pixels_sample200k.csv
+
+# ── Jupyter / Python / editor housekeeping ──────────────────────────────
+.ipynb_checkpoints/
+__pycache__/
+*.pyc
+.claude/
+.vscode/

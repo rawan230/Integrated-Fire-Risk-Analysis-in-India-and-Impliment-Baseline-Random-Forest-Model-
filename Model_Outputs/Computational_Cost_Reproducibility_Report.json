@@ -1,0 +1,77 @@
+{
+  "pipeline_timings_seconds": [
+    {
+      "stage": "Step 3 (LST): stream 1,013 GeoTIFF composites (~33 GB)",
+      "seconds": 1062.3
+    },
+    {
+      "stage": "Step 3 (LST): Mann-Kendall trend, 3 metrics (GPU-tiled)",
+      "seconds": 115.8
+    },
+    {
+      "stage": "Step 4: re-read 266 NDVI GeoTIFFs for monthly series",
+      "seconds": 174.0
+    },
+    {
+      "stage": "Step 5: load integrated parquet",
+      "seconds": 0.47
+    },
+    {
+      "stage": "Step 5: train Random Forest (test-split model)",
+      "seconds": 199.94
+    },
+    {
+      "stage": "Step 5: test-set inference",
+      "seconds": 1.352
+    },
+    {
+      "stage": "Step 5: 5-fold cross-validation (5x refits)",
+      "seconds": 347.69
+    },
+    {
+      "stage": "Step 5: full-grid inference (all valid pixels)",
+      "seconds": 6.327
+    }
+  ],
+  "model_performance": {
+    "roc_auc": 0.9675937392621943,
+    "average_precision": 0.6764583799012879
+  },
+  "reproducibility": {
+    "random_state": 42,
+    "exact_bit_for_bit_match": false,
+    "match_within_1e-9": true,
+    "max_abs_prediction_diff": 7.771561172376096e-16,
+    "cv_auc_mean": 0.967089795899008,
+    "cv_auc_std": 0.00016192954370237194,
+    "cv_scores": [
+      0.9670038176461907,
+      0.9671167293457387,
+      0.9673521069316777,
+      0.9668586974277765,
+      0.967117628143657
+    ]
+  },
+  "memory_gb": {
+    "lst_naive_dense_stack_estimate": 217.0,
+    "lst_streaming_accumulators_actual": 37.2,
+    "step5_process_resident": 7.414263808
+  },
+  "storage_mb": {
+    "parquet": 444.721791,
+    "equivalent_csv_estimate": 1882.332847102215
+  },
+  "dataset": {
+    "n_pixels": 4161009,
+    "n_features": 52,
+    "n_fire_pixels": 270074,
+    "fire_rate_pct": 6.4905891816143635
+  },
+  "environment": {
+    "numpy": "2.5.1",
+    "pandas": "3.0.3",
+    "scikit_learn": "1.9.0",
+    "cpu_cores": 24
+  },
+  "notebook_total_seconds": 754.0841002464294
+}

@@ -1,0 +1,22 @@
+# Integrated Fire-Risk Alignment (Step 4) + Susceptibility Model (Step 5) — dependencies
+# Install with: pip install -r requirements.txt
+#
+# Pinned versions matter here: numpy 2.x requires pandas >= 3.0, matplotlib >= 3.10,
+# scipy >= 1.16, and scikit-learn >= 1.9 -- older wheels are built against the numpy 1.x
+# ABI and crash with "numpy.core._multiarray_umath failed to import" if numpy 2.x is
+# already present (same issue class hit in Step 3).
+
+numpy==2.5.1
+pandas>=3.0
+matplotlib>=3.10
+scipy>=1.16
+scikit-learn>=1.9
+geopandas
+rasterio
+pyogrio
+netCDF4
+pyarrow
+psutil
+tqdm
+jupyter
+nbconvert
