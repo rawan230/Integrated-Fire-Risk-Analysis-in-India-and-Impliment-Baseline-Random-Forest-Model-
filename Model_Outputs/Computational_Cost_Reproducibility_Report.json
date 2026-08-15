@@ -14,52 +14,52 @@
     },
     {
       "stage": "Step 5: load integrated parquet",
-      "seconds": 0.47
+      "seconds": 0.3
     },
     {
       "stage": "Step 5: train Random Forest (test-split model)",
-      "seconds": 199.94
+      "seconds": 188.06
     },
     {
       "stage": "Step 5: test-set inference",
-      "seconds": 1.352
+      "seconds": 1.384
     },
     {
       "stage": "Step 5: 5-fold cross-validation (5x refits)",
-      "seconds": 347.69
+      "seconds": 659.38
     },
     {
       "stage": "Step 5: full-grid inference (all valid pixels)",
-      "seconds": 6.327
+      "seconds": 6.145
     }
   ],
   "model_performance": {
-    "roc_auc": 0.9675937392621943,
-    "average_precision": 0.6764583799012879
+    "roc_auc": 0.9674496664991747,
+    "average_precision": 0.6760892515403112
   },
   "reproducibility": {
     "random_state": 42,
     "exact_bit_for_bit_match": false,
     "match_within_1e-9": true,
-    "max_abs_prediction_diff": 7.771561172376096e-16,
-    "cv_auc_mean": 0.967089795899008,
-    "cv_auc_std": 0.00016192954370237194,
+    "max_abs_prediction_diff": 8.881784197001252e-16,
+    "cv_auc_mean": 0.9669921680842055,
+    "cv_auc_std": 0.0001874403978095923,
     "cv_scores": [
-      0.9670038176461907,
-      0.9671167293457387,
-      0.9673521069316777,
-      0.9668586974277765,
-      0.967117628143657
+      0.9669537771558965,
+      0.96697119211739,
+      0.967291815291136,
+      0.9667060461576877,
+      0.9670380096989171
     ]
   },
   "memory_gb": {
     "lst_naive_dense_stack_estimate": 217.0,
     "lst_streaming_accumulators_actual": 37.2,
-    "step5_process_resident": 7.414263808
+    "step5_process_resident": 7.3288704
   },
   "storage_mb": {
-    "parquet": 444.721791,
-    "equivalent_csv_estimate": 1882.332847102215
+    "parquet": 445.336346,
+    "equivalent_csv_estimate": 1882.87342458645
   },
   "dataset": {
     "n_pixels": 4161009,
@@ -73,5 +73,5 @@
     "scikit_learn": "1.9.0",
     "cpu_cores": 24
   },
-  "notebook_total_seconds": 754.0841002464294
+  "notebook_total_seconds": 1053.2165925502777
 }
