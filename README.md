@@ -66,6 +66,9 @@ Delivers:
    5-fold cross-validation to show AUC stability across data subsets.
 3. **Computational cost accounting**: wall-clock time and memory for every stage.
 4. A full-country fire susceptibility probability map (`Fire_Susceptibility_Probability.tif`).
+5. A real, trained **MaxEnt baseline** (`elapid`), evaluated on the identical held-out test
+   set, as a direct methodological comparison against Biswas et al. (2025) — the paper this
+   pipeline extends, which itself uses MaxEnt for India forest-fire susceptibility mapping.
 
 ### Results (retrained 2026-08-15 on the 52-feature set, after the forest-class + CVSI k8 fixes below)
 
@@ -107,23 +110,71 @@ Top 5 features by Gini importance (2026-08-15 re-run, post forest-class reconcil
 dominate; no single FLDAS or land-cover-class feature cracked the top 5, though they
 contribute in aggregate (52 features total vs. 20 before the FLDAS/land-cover expansion).
 
+### MaxEnt baseline (Biswas et al. 2025 comparison, added 2026-08-17)
+
+This pipeline explicitly extends **Biswas, U., Mahato, S., & Joshi, P.K. (2025)**, the
+paper cited at the bottom of this README, which uses **MaxEnt (Maximum Entropy)** for
+forest-fire susceptibility mapping in India. Until this run, no direct MaxEnt comparison
+existed anywhere in this project. Step 5 now trains a real MaxEnt model
+(`elapid.MaxentModel` v1.0.4 — a scikit-learn-compatible reimplementation of Phillips et
+al.'s algorithm, `feature_types=['linear','hinge','product']`, cloglog transform) on this
+project's own 52-feature table and evaluates it on the **identical held-out test set**
+(832,202 pixels) as the Random Forest above — a direct, apples-to-apples comparison, not a
+citation of Biswas et al.'s own reported numbers (which would be a weaker comparison given
+their different feature set/resolution).
+
+**MaxEnt is classically trained on presence + background samples, not exhaustive
+full-image training** — standard practice in the species/habitat distribution modeling
+literature MaxEnt comes from. A preliminary 40,000-row benchmark measured 202.6 sec, naively
+extrapolating to ~40–50 min for an originally-planned 450,000-row training subsample.
+**A direct timing probe on this project's own data disproved that extrapolation**: MaxEnt's
+fit time scales *super-linearly* with sample size here (20k → 356 rows/sec, 40k → ~275,
+80k → ~205, 150k → 121, 250k → 67 rows/sec) — a 450,000-row fit did not finish within a
+7,200 sec (2 hr) cell timeout. Training size was recalibrated down to **150,000 rows**
+(confirmed ~20.6 min fit time), a disclosed deviation from the original target, not a
+silent downgrade — still a large stratified presence/background sample by the standards of
+the literature this method comes from.
+
+| Metric | Random Forest (headline) | MaxEnt (elapid) |
+|---|---|---|
+| ROC-AUC (held-out test, 832,202 px) | **0.9674** | 0.9576 |
+| Average Precision | **0.6761** | 0.6111 |
+| Training rows | 3,328,807 (100% of train split) | 150,000 (4.51% of train split, stratified) |
+| Training time | 195.2 sec | 1,396.4 sec (23.3 min) |
+| Test-set inference time | 1.4 sec | 33.3 sec |
+
+Random Forest outperforms MaxEnt on this feature set by 0.0098 ROC-AUC (0.9674 vs. 0.9576)
+and 0.0650 Average Precision — a modest but consistent RF advantage, plausible given RF
+trains on the full 3.3M-row training set with a more flexible (non-linear, non-additive)
+decision boundary, while MaxEnt here is a linear/hinge/product-feature exponential-family
+model trained on a 4.5%-of-training-set stratified subsample. This is reported as a
+straightforward measured result, not tuned in either model's favor. Outputs:
+`ROC_PR_Curves_RF_vs_MaxEnt.png`, `RF_vs_MaxEnt_Comparison.csv`,
+`MaxEnt_Feature_Importance.png` (permutation importance), `MaxEnt_Susceptibility_Probability.tif`,
+`Fire_Susceptibility_Map_RF_vs_MaxEnt.png`.
+
 This model is **not a preprocessing dependency for a PINN** — nothing downstream reads its
-outputs. It's kept deliberately as a standalone classical-ML baseline to compare a future
-PINN against (decision made 2026-08-04; see the `integrated-fire-risk-model` skill for the
-full reasoning). Step 4, by contrast, *is* necessary preprocessing — it's the one place
-LULC features get built and every other step's output gets assembled into a single
-ML-ready table, which a PINN needs regardless of model architecture.
+outputs. It's kept deliberately as a standalone classical-ML baseline (now with two
+reference points — Random Forest and MaxEnt) to compare a future PINN against (decision
+made 2026-08-04; see the `integrated-fire-risk-model` skill for the full reasoning). Step 4,
+by contrast, *is* necessary preprocessing — it's the one place LULC features get built and
+every other step's output gets assembled into a single ML-ready table, which a PINN needs
+regardless of model architecture.
 
 ## How to run
 
 ```bash
 pip install -r requirements.txt
 jupyter nbconvert --to notebook --execute --inplace --ExecutePreprocessor.kernel_name=firerisk-anaconda3 --ExecutePreprocessor.timeout=1800 "Step4_Integrated_FireRisk_Analysis.ipynb"
-jupyter nbconvert --to notebook --execute --inplace --ExecutePreprocessor.kernel_name=firerisk-anaconda3 --ExecutePreprocessor.timeout=1800 "Step5_FireRisk_Susceptibility_Model.ipynb"
+jupyter nbconvert --to notebook --execute --inplace --ExecutePreprocessor.kernel_name=firerisk-anaconda3 --ExecutePreprocessor.timeout=3600 "Step5_FireRisk_Susceptibility_Model.ipynb"
 ```
 
 Step 4 requires Steps 1, 2, 3, and 6 to have already run (reads their outputs directly).
-Step 5 requires Step 4's parquet.
+Step 5 requires Step 4's parquet. Step 5's total wall time is now ~50 min (measured
+2026-08-17: 2,996.7 sec) — up from ~22 min before the MaxEnt baseline was added, since
+MaxEnt's 150,000-row fit alone takes ~23.3 min; the `--ExecutePreprocessor.timeout` above
+is a per-cell limit, not a total-notebook limit, and 3600 sec comfortably covers the
+MaxEnt training cell with margin.
 
 ## Outputs
 
@@ -137,10 +188,15 @@ Integrated_Outputs/
 └── Fire_vs_NoFire_Feature_Distributions.png    # tracked
 
 Model_Outputs/
-├── Fire_Susceptibility_Probability.tif         # full-country probability map (not tracked)
-├── Feature_Importance.png                      # tracked
+├── Fire_Susceptibility_Probability.tif         # full-country probability map, Random Forest (not tracked)
+├── MaxEnt_Susceptibility_Probability.tif       # full-country probability map, MaxEnt (not tracked)
+├── Feature_Importance.png                      # tracked -- Random Forest Gini importance
+├── MaxEnt_Feature_Importance.png               # tracked -- MaxEnt permutation importance
 ├── Fire_Susceptibility_Map.png                 # tracked
+├── Fire_Susceptibility_Map_RF_vs_MaxEnt.png    # tracked -- side-by-side maps, both models
 ├── ROC_PR_Curves.png                           # tracked
+├── ROC_PR_Curves_RF_vs_MaxEnt.png              # tracked -- overlaid ROC/PR, both models
+├── RF_vs_MaxEnt_Comparison.csv                 # tracked -- AUC/AP/timing/sample-size table
 ├── Computational_Cost_Dashboard.png             # tracked
 └── Computational_Cost_Reproducibility_Report.json  # tracked
 ```

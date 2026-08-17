@@ -14,34 +14,73 @@
     },
     {
       "stage": "Step 5: load integrated parquet",
-      "seconds": 0.3
+      "seconds": 0.32
     },
     {
       "stage": "Step 5: train Random Forest (test-split model)",
-      "seconds": 188.06
+      "seconds": 195.16
     },
     {
-      "stage": "Step 5: test-set inference",
-      "seconds": 1.384
+      "stage": "Step 5: test-set inference (Random Forest)",
+      "seconds": 1.434
     },
     {
       "stage": "Step 5: 5-fold cross-validation (5x refits)",
-      "seconds": 659.38
+      "seconds": 684.84
     },
     {
-      "stage": "Step 5: full-grid inference (all valid pixels)",
-      "seconds": 6.145
+      "stage": "Step 5: full-grid inference (Random Forest, all valid pixels)",
+      "seconds": 6.228
+    },
+    {
+      "stage": "Step 5: train MaxEnt (150k-row stratified subsample)",
+      "seconds": 1396.37
+    },
+    {
+      "stage": "Step 5: test-set inference (MaxEnt, full 832,202-row test set)",
+      "seconds": 33.254
+    },
+    {
+      "stage": "Step 5: MaxEnt permutation importance (100k-row sample)",
+      "seconds": 201.75
+    },
+    {
+      "stage": "Step 5: full-grid inference (MaxEnt, all valid pixels)",
+      "seconds": 252.108
     }
   ],
   "model_performance": {
-    "roc_auc": 0.9674496664991747,
-    "average_precision": 0.6760892515403112
+    "random_forest": {
+      "roc_auc": 0.967449666499175,
+      "average_precision": 0.6760892515403112
+    },
+    "maxent": {
+      "roc_auc": 0.9576175213076985,
+      "average_precision": 0.6110675576887113
+    }
+  },
+  "maxent_comparison": {
+    "reference": "Biswas, U., Mahato, S., & Joshi, P.K. (2025), Environ. Sci. Pollut. Res., 32(8), 4856-4878 (uses MaxEnt for India forest-fire susceptibility)",
+    "library": "elapid 1.0.4",
+    "feature_types": [
+      "linear",
+      "hinge",
+      "product"
+    ],
+    "train_rows": 150000,
+    "train_rows_pct_of_full_train": 4.51,
+    "train_seconds": 1396.3718612194061,
+    "test_inference_seconds": 33.2544960975647,
+    "roc_auc": 0.9576175213076985,
+    "average_precision": 0.6110675576887113,
+    "roc_auc_vs_random_forest": 0.00983214519147646,
+    "note": "training size recalibrated from an original 450,000-row target to 150,000 rows after a direct timing probe showed super-linear fit-time scaling with sample size on this data/library combination (450k did not finish within a 7200 sec cell timeout)"
   },
   "reproducibility": {
     "random_state": 42,
     "exact_bit_for_bit_match": false,
     "match_within_1e-9": true,
-    "max_abs_prediction_diff": 8.881784197001252e-16,
+    "max_abs_prediction_diff": 7.771561172376096e-16,
     "cv_auc_mean": 0.9669921680842055,
     "cv_auc_std": 0.0001874403978095923,
     "cv_scores": [
@@ -55,7 +94,7 @@
   "memory_gb": {
     "lst_naive_dense_stack_estimate": 217.0,
     "lst_streaming_accumulators_actual": 37.2,
-    "step5_process_resident": 7.3288704
+    "step5_process_resident": 0.538189824
   },
   "storage_mb": {
     "parquet": 445.336346,
@@ -71,7 +110,8 @@
     "numpy": "2.5.1",
     "pandas": "3.0.3",
     "scikit_learn": "1.9.0",
+    "elapid": "1.0.4",
     "cpu_cores": 24
   },
-  "notebook_total_seconds": 1053.2165925502777
+  "notebook_total_seconds": 2996.654807806015
 }

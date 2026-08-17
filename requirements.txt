@@ -20,3 +20,4 @@ psutil
 tqdm
 jupyter
 nbconvert
+elapid>=1.0.4  # MaxEnt baseline (Step 5) -- Biswas et al. (2025) methodological comparison
