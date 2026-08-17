@@ -6,6 +6,12 @@ this specific method was chosen over other existing methods in the literature**,
 its novelty classification, and its reference. For the audit trail (discrepancies
 found/fixed, citation-confidence flags) see `METHODOLOGY.md`.
 
+**Renumbered 2026-08-17**: FLDAS/land-cover is now Step 4 (was Step 6), integrated
+alignment is now Step 5 (was Step 4), the susceptibility model is now Step 6 (was
+Step 5) — training is genuinely the last step in the real execution order now, not
+an oddly-numbered middle step. Only labels changed, not code or data flow (FLDAS
+always had to run before assembly, regardless of its old number).
+
 **Novelty tags**: **[STANDARD]** = established method applied as-is; **[ADAPTED]** =
 established method modified for this project's data/domain; **[NOVEL]** =
 project-original, no literature precedent.
@@ -24,14 +30,14 @@ actual data files.
 |---|---|---|---|---|
 | MODIS NDVI (MOD13A3.061) | 1km | Monthly | 1km — **defines** the shared grid | 5× finer per axis, **25× finer per pixel area** |
 | MODIS LST (MOD11A2.061) | 1km | 8-day composite → aggregated monthly | 1km (reprojected to NDVI grid) | 5× finer per axis, 25× finer per pixel area |
-| ESA-CCI/C3S LULC (forest fraction + 22-class) | 300m | Annual | 1km (area-weighted fractional aggregation, §Step 4/6) | Native 300m is ~17× finer per axis than 5km; the aggregated 1km *output* is still 5× finer, while the aggregation itself (unlike FLDAS below) genuinely averages real sub-pixel detail, not fabricated detail |
+| ESA-CCI/C3S LULC (forest fraction + 22-class) | 300m | Annual | 1km (area-weighted fractional aggregation, §Step 4/5) | Native 300m is ~17× finer per axis than 5km; the aggregated 1km *output* is still 5× finer, while the aggregation itself (unlike FLDAS below) genuinely averages real sub-pixel detail, not fabricated detail |
 | FLDAS climatic (FLDAS_NOAH01_C_GL_M) | **~11km (0.1°)** | Monthly | 1km (bilinearly interpolated onto the shared grid) | Native ~11km is **2.2× coarser** than Biswas et al.'s ~5km, not finer — see note below |
 | MODIS active fire (FIRMS, Step 1 label) | 1km nominal | Daily detections, rasterized to the study's monthly cadence | 1km (exact affine lookup, no resampling) | 5× finer per axis |
 
 **Honest note on FLDAS**: unlike NDVI/LST/LULC — which are genuinely native at
 (or finer than) 1km and are simply *reprojected/aggregated* onto the shared grid
 without inventing information — FLDAS's raw data physically only carries ~11km-scale
-information. The bilinear interpolation used in Step 6's grid-based pipeline
+information. The bilinear interpolation used in Step 4's grid-based pipeline
 (and referenced in `Integrated_Analysis`'s stacked feature table) makes FLDAS
 *appear* to sit on the same 1km grid as everything else, but does not create real
 1km-resolution climatic detail — it's a smooth interpolation of a coarser field, not
@@ -53,7 +59,7 @@ independent spatial observations over the same land area). This distinction matt
 because "25× finer" sounds like a modest sharpening but is actually a 25-fold
 increase in the number of distinct data points describing the same country.
 
-**Made concrete with this project's own numbers**: Step 4 established national mean
+**Made concrete with this project's own numbers**: Step 5 established national mean
 forest fraction at ~10.2–10.7% of India's ~3.287 million km² land area — roughly
 **335,000–350,000 km² of forest**. At 1km resolution that's on the order of
 **335,000–350,000 individual forest pixels**; at Biswas et al.'s ~5km it would be
@@ -437,86 +443,11 @@ DTR specifically). Significance (p<0.05): Day 1,063,120 px, Night 234,318 px, DT
 
 ---
 
-## Step 4 — Integrated Alignment (54 features assembled)
+## Step 4 — FLDAS Climatic Variables + Land Cover (12 + 22 features)
 
-```
-forest_frac(i,j) = (1/N_sub) Σ_{sub-pixel ∈ cell(i,j)} 1[LULC_sub ∈ ForestCodes]
-```
-**Definitions**: `N_sub` = the number of native 300m LULC sub-pixels falling inside
-1km destination cell `(i,j)`; `1[·]` = the indicator function (1 if the sub-pixel's
-land-cover code is in the 13-code forest set, 0 otherwise); computed via
-`rasterio.warp.reproject(..., resampling=Resampling.average)`, which is exactly the
-area-weighted mean of this binary mask. Three snapshots (baseline=2001, recent=2020,
-current=2022); `forest_loss = forest_frac_baseline − forest_frac_recent`.
-
-**Why area-weighted averaging vs. majority-class ("mode") resampling** (the more
-common default when downsampling a categorical raster): mode resampling would
-collapse a 1km cell that's 60% forest / 40% cropland to a single hard label
-("forest"), discarding exactly the continuous fragmentation information that
-Step 2's F8 (LISA) already establishes is meaningful for fire-edge risk —
-area-weighted averaging of the *binary forest mask specifically* preserves this as
-a continuous `[0,1]` fraction instead. **[ADAPTED]** — area-weighted resampling is
-a standard GIS operation; applying it to preserve fractional forest cover (rather
-than snapping to a majority class) is a deliberate choice here.
-
-**Forest-class reconciliation (2026-08-10)**: now uses the same 13-code set as
-Step 1 (previously 11 codes — an undocumented divergence, omitted mosaic-tree/shrub
-and mosaic-herbaceous). National mean forest fraction rose ~7.8–8.0% → **10.2–10.7%**;
-these three features became the **top 3** Step 5 predictors by Gini importance
-after the fix.
-
-**Result**: `Integrated_FireRisk_Pixels.parquet`, **4,161,009 pixels × 56 columns**
-(54 features + lon + lat).
-
----
-
-## Step 5 — Susceptibility Model (Random Forest + MaxEnt)
-
-```
-Gini(node) = 1 − Σ_c p_c²
-ROC-AUC = P(score(positive) > score(negative))
-AP = Σ_n (R_n − R_{n−1}) · P_n
-```
-**Definitions**: `p_c` = the fraction of samples at a tree node belonging to class
-`c` (fire / no-fire); a split is chosen to minimize the weighted Gini impurity of
-the resulting child nodes; feature importance = total Gini decrease attributable to
-a feature, summed across all splits/trees, normalized; `score(·)` = the model's
-predicted fire probability for a sample; `R_n, P_n` = recall and precision at the
-`n`-th threshold along the precision-recall curve (AP = the area under that curve,
-via a step-weighted sum).
-
-**Why Random Forest as the primary baseline vs. Gradient Boosting** (e.g. XGBoost,
-also included in this project's separate Step 7 comparison ladder): RF trains
-trees independently on bootstrap samples (bagging) — embarrassingly parallel,
-lower variance from averaging, less sensitive to hyperparameter choices, and its
-bit-exact reproducibility is straightforward to verify (this project explicitly
-does, max diff 7.77e-16 across reruns). Gradient boosting trains trees sequentially
-to correct prior residual errors — often higher raw accuracy (confirmed here:
-Step 7's XGBoost slightly edges out RF, 0.9678 vs 0.9676 on a comparable split) but
-more hyperparameter-sensitive and slower to verify exact reproducibility. RF is
-used as the primary, most-scrutinized baseline for exactly the properties that make
-it easiest to defend rigorously; XGBoost's comparison lives in the separate model
-ladder (Step 7) rather than replacing RF here. **Why RF vs. MaxEnt** (Biswas et
-al.'s own method, now also trained here as a direct comparison): MaxEnt is a
-presence-background method — it was originally designed for species distribution
-modeling where only presence records (and no confirmed absences) are typically
-available, and it models presence probability relative to a background sample.
-This project has confirmed non-fire pixels (true negatives, not just unlabeled
-background), which a fully discriminative method like RF can use directly and
-MaxEnt's classical formulation does not exploit the same way — RF is the more
-natural fit for this project's actual label structure, while MaxEnt is included
-specifically *because* it's the established comparison point in the literature this
-project extends. **[STANDARD]**: Breiman (2001), *Machine Learning*, 45(1):5–32;
-Davis & Goadrich (2006), *ICML '06*, 233–240 [both cite-confirmed].
-
-**Current result**: ROC-AUC 0.9674, AP 0.6761, 5-fold CV 0.9670±0.0002. MaxEnt
-(`elapid`, trained on a ~450k-row stratified subsample of the training portion per
-MaxEnt's own textbook presence-background convention, evaluated on the full
-832,202-row test set) — training in progress.
-
----
-
-## Step 6 — FLDAS Climatic Variables + Land Cover (12 + 22 features)
+> **Renumbered 2026-08-17**: was "Step 6" before — moved to Step 4 since it's an
+> independent preprocessing step that always ran before assembly/training
+> regardless of its old number. No content changed, only the label.
 
 **Product**: FLDAS_NOAH01_C_GL_M.001, 0.1°/~11km, monthly. McNally et al. (2017),
 *Scientific Data*, 4:170012, DOI:10.1038/sdata.2017.12 [cite-confirmed]. 6 variables
@@ -562,7 +493,7 @@ base_code(i,j) = ⌊ raw_LCCS_code(i,j) / 10 ⌋ × 10
 code (38 possible values, e.g. 61/62 splitting broadleaved-evergreen into
 closed/open canopy); `⌊·⌋` = integer floor division; `base_code` = the Level-1
 parent class (22 possible values: 10, 20, 30, ..., 220). Reprojected 300m→~1km via
-the same area-weighted `Resampling.average` as Step 4's forest fraction.
+the same area-weighted `Resampling.average` as Step 5's forest fraction (below).
 
 **Why collapse to Level-1 (22 classes) vs. keeping full Level-2 granularity (38
 classes)**: Level-1 is the official ESA CCI legend tier (verified 2026-08-09 against
@@ -584,9 +515,94 @@ archive in this project.
 
 ---
 
+## Step 5 — Integrated Alignment (54 features assembled)
+
+> **Renumbered 2026-08-17**: was "Step 4" before — moved to Step 5, after FLDAS
+> (now Step 4), since it depends on FLDAS's output and always ran after it.
+
+```
+forest_frac(i,j) = (1/N_sub) Σ_{sub-pixel ∈ cell(i,j)} 1[LULC_sub ∈ ForestCodes]
+```
+**Definitions**: `N_sub` = the number of native 300m LULC sub-pixels falling inside
+1km destination cell `(i,j)`; `1[·]` = the indicator function (1 if the sub-pixel's
+land-cover code is in the 13-code forest set, 0 otherwise); computed via
+`rasterio.warp.reproject(..., resampling=Resampling.average)`, which is exactly the
+area-weighted mean of this binary mask. Three snapshots (baseline=2001, recent=2020,
+current=2022); `forest_loss = forest_frac_baseline − forest_frac_recent`.
+
+**Why area-weighted averaging vs. majority-class ("mode") resampling** (the more
+common default when downsampling a categorical raster): mode resampling would
+collapse a 1km cell that's 60% forest / 40% cropland to a single hard label
+("forest"), discarding exactly the continuous fragmentation information that
+Step 2's F8 (LISA) already establishes is meaningful for fire-edge risk —
+area-weighted averaging of the *binary forest mask specifically* preserves this as
+a continuous `[0,1]` fraction instead. **[ADAPTED]** — area-weighted resampling is
+a standard GIS operation; applying it to preserve fractional forest cover (rather
+than snapping to a majority class) is a deliberate choice here.
+
+**Forest-class reconciliation (2026-08-10)**: now uses the same 13-code set as
+Step 1 (previously 11 codes — an undocumented divergence, omitted mosaic-tree/shrub
+and mosaic-herbaceous). National mean forest fraction rose ~7.8–8.0% → **10.2–10.7%**;
+these three features became the **top 3** Step 6 predictors by Gini importance
+after the fix.
+
+**Result**: `Integrated_FireRisk_Pixels.parquet`, **4,161,009 pixels × 56 columns**
+(54 features + lon + lat).
+
+---
+
+## Step 6 — Susceptibility Model (Random Forest + MaxEnt)
+
+> **Renumbered 2026-08-17**: was "Step 5" before — moved to Step 6, now the
+> genuinely last step in the actual execution order.
+
+```
+Gini(node) = 1 − Σ_c p_c²
+ROC-AUC = P(score(positive) > score(negative))
+AP = Σ_n (R_n − R_{n−1}) · P_n
+```
+**Definitions**: `p_c` = the fraction of samples at a tree node belonging to class
+`c` (fire / no-fire); a split is chosen to minimize the weighted Gini impurity of
+the resulting child nodes; feature importance = total Gini decrease attributable to
+a feature, summed across all splits/trees, normalized; `score(·)` = the model's
+predicted fire probability for a sample; `R_n, P_n` = recall and precision at the
+`n`-th threshold along the precision-recall curve (AP = the area under that curve,
+via a step-weighted sum).
+
+**Why Random Forest as the primary baseline vs. Gradient Boosting** (e.g. XGBoost,
+also included in this project's separate Step 7 comparison ladder): RF trains
+trees independently on bootstrap samples (bagging) — embarrassingly parallel,
+lower variance from averaging, less sensitive to hyperparameter choices, and its
+bit-exact reproducibility is straightforward to verify (this project explicitly
+does, max diff 7.77e-16 across reruns). Gradient boosting trains trees sequentially
+to correct prior residual errors — often higher raw accuracy (confirmed here:
+Step 7's XGBoost slightly edges out RF, 0.9678 vs 0.9676 on a comparable split) but
+more hyperparameter-sensitive and slower to verify exact reproducibility. RF is
+used as the primary, most-scrutinized baseline for exactly the properties that make
+it easiest to defend rigorously; XGBoost's comparison lives in the separate model
+ladder (Step 7) rather than replacing RF here. **Why RF vs. MaxEnt** (Biswas et
+al.'s own method, now also trained here as a direct comparison): MaxEnt is a
+presence-background method — it was originally designed for species distribution
+modeling where only presence records (and no confirmed absences) are typically
+available, and it models presence probability relative to a background sample.
+This project has confirmed non-fire pixels (true negatives, not just unlabeled
+background), which a fully discriminative method like RF can use directly and
+MaxEnt's classical formulation does not exploit the same way — RF is the more
+natural fit for this project's actual label structure, while MaxEnt is included
+specifically *because* it's the established comparison point in the literature this
+project extends. **[STANDARD]**: Breiman (2001), *Machine Learning*, 45(1):5–32;
+Davis & Goadrich (2006), *ICML '06*, 233–240 [both cite-confirmed].
+
+**Current result**: ROC-AUC 0.9674, AP 0.6761, 5-fold CV 0.9670±0.0002. MaxEnt
+(`elapid`, trained on a ~450k-row stratified subsample of the training portion per
+MaxEnt's own textbook presence-background convention, evaluated on the full
+832,202-row test set) — training in progress.
+
+---
+
 ## Cross-cutting: what makes this pipeline defensible
 
-1. **Identical anomaly/trend methodology across Steps 2/3/6** — one implementation
+1. **Identical anomaly/trend methodology across Steps 2/3/4** — one implementation
    to verify, not six.
 2. **Every "why this method" comparison above names a specific, real alternative**
    (STL, SPI/SPEI, Getis-Ord Gi\*, Youden's J, gradient boosting, Buck's equation,
