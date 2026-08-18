@@ -526,10 +526,12 @@ roads/railways/waterways** (OSM 2022, 10.8% combined contribution in their model
 this pipeline has not computed, not one. See `METHODOLOGY.md`'s Step 4 section for the
 full corrected variable table.
 
-**Closed 2026-08-18**: all six built in `Terrain_Accessibility_Analysis/`, a new
-independent step run alongside Step 4 and feeding Step 5 — see that folder's README for
+**Closed 2026-08-18, numbered and split into two repos 2026-08-19**: all six built as
+Step 5a (`Terrain_Elevation_Slope_Aspect_Analysis/`) and Step 5b
+(`Distance_Roads_Railways_Waterways_Analysis/`), run alongside Step 4 and feeding
+Step 6 (Integration, bumped from Step 5 to make room) — see each repo's own README for
 full results and methodology. This pipeline now covers all 15 of Biswas et al.'s real
-predictor variables. Not yet wired into Step 5's pixel table or Step 6's retrained
+predictor variables. Not yet wired into Step 6's pixel table or Step 7's retrained
 model.
 
 ---
