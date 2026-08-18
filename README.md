@@ -1,14 +1,16 @@
 # 🔥🌿🌡️🗺️🎯 Integrated Fire-Risk Alignment + Susceptibility Model
 
-**Notebooks:** [`Step5_Integrated_FireRisk_Analysis.ipynb`](Step5_Integrated_FireRisk_Analysis.ipynb), [`Step6_FireRisk_Susceptibility_Model.ipynb`](Step6_FireRisk_Susceptibility_Model.ipynb)
+**Notebooks:** [`Step6_Integrated_FireRisk_Analysis.ipynb`](Step6_Integrated_FireRisk_Analysis.ipynb), [`Step7_FireRisk_Susceptibility_Model.ipynb`](Step7_FireRisk_Susceptibility_Model.ipynb)
 **Kernel:** `firerisk-anaconda3` (Python 3.12.7, base `C:\Users\Admin\anaconda3\python.exe`)
 
-> **Renumbered 2026-08-17**: these notebooks were `Step4_...`/`Step5_...` before — renamed
-> to `Step5_...`/`Step6_...` so training is genuinely the last step in both execution order
-> and documentation labels. FLDAS (previously "Step 6") is now Step 4. No content, code, or
-> results changed, only the labels and filenames.
+> **Renumbered twice.** On 2026-08-17, these notebooks moved from `Step4_...`/`Step5_...`
+> to `Step5_...`/`Step6_...` so training was the last step in both execution order and
+> documentation labels (FLDAS, previously "Step 6", became Step 4). On 2026-08-19, they
+> moved again to `Step6_...`/`Step7_...` to make room for a new Step 5 (Terrain &
+> Accessibility Analysis, its own folder/repo) inserted between FLDAS and this step. No
+> content, code, or results changed either time, only the labels and filenames.
 
-## Step 5 — Integrated Multi-Factor Fire-Risk Feature Alignment
+## Step 6 — Integrated Multi-Factor Fire-Risk Feature Alignment
 
 Combines every other step's per-pixel feature rasters — already on (or reprojected onto)
 the **NDVI grid** (3641×3504, EPSG:4326, ~0.01°/1km, established in Step 2) — into one
@@ -28,13 +30,13 @@ aligned dataset:
 **2026-08-15 fixes:**
 - **CVSI k6 → k8**: Step 2's CVSI optimal-lag was corrected from k=6 to k=8 after extending
   and properly resolving the mutual-information sweep (k=8 is a confirmed interior optimum,
-  not a boundary artifact). Step 5's NDVI-loading cell now reads `F7_CVSI_k8.tif` into a
+  not a boundary artifact). Step 6's NDVI-loading cell now reads `F7_CVSI_k8.tif` into a
   `ndvi_cvsi_k8` column (renamed from `ndvi_cvsi_k6` / `F7_CVSI_k6.tif`).
-- **Forest-class reconciliation**: Step 5's `FOREST_CODES` set (used to build
+- **Forest-class reconciliation**: Step 6's `FOREST_CODES` set (used to build
   `forest_frac_baseline/recent/current` and `forest_loss_baseline_to_recent`) previously
   omitted LCCS codes 100 (`mosaic_tree_and_shrub`) and 110 (`mosaic_herbaceous`) — an
   undocumented divergence from Step 1's own `FOREST_CODES`, which includes them per
-  Sannigrahi et al. 2018 (cited via Biswas et al. 2025, p.4863). Step 5 now uses the same
+  Sannigrahi et al. 2018 (cited via Biswas et al. 2025, p.4863). Step 6 now uses the same
   13-code definition as Step 1 (`{50, 60, 61, 62, 70, 71, 72, 80, 81, 82, 90, 100, 110}`),
   so the fire-point ground-truth label and the forest-fraction predictor feature share one
   consistent operational definition of "forest." This raised the national-mean
@@ -53,16 +55,16 @@ aligned dataset:
 
 Every documented variable source (NDVI, LST, FLDAS climatic variables, land cover) is
 wired in as of this run — this was the pending gap flagged in Step 4/FLDAS's own closing
-note ("wire into `Integrated_Analysis/Step5`"), closed by adding a Step 4b cell that loads
+note ("wire into `Integrated_Analysis/Step6`"), closed by adding a Step 4b cell that loads
 FLDAS's `NDVI_Aligned_GeoTIFFs/*.tif` and the 22-band land-cover GeoTIFF the same way the
 existing LST-loading cell works.
 
-## Step 6 — Fire Susceptibility Model + Reproducibility Report
+## Step 7 — Fire Susceptibility Model + Reproducibility Report
 
-**Input:** Step 5's `Integrated_FireRisk_Pixels.parquet` — dynamically picks up every
+**Input:** Step 6's `Integrated_FireRisk_Pixels.parquet` — dynamically picks up every
 feature column present (`feature_cols = [c for c in df.columns if c not in DROP_COLS]`),
 so it automatically retrained on the full 52-feature set (56 columns minus `lon`, `lat`,
-`fire_count`, `fire_ever`) once Step 5 was expanded with FLDAS + land cover.
+`fire_count`, `fire_ever`) once Step 6 was expanded with FLDAS + land cover.
 
 Delivers:
 1. A Random Forest fire-susceptibility classifier evaluated on a held-out test set
@@ -86,7 +88,7 @@ Delivers:
 | Train / test split | 3,328,807 / 832,202 pixels (80/20, stratified, 6.49% fire rate both sides) |
 | Training time | 188.1 sec (200 trees, max depth 20, 24 cores) |
 
-**2026-08-15 re-run note:** this result reflects two upstream Step 5 fixes — (1) the
+**2026-08-15 re-run note:** this result reflects two upstream Step 6 fixes — (1) the
 `FOREST_CODES` reconciliation to Step 1's 13-code definition (adds LCCS 100/110 to the
 forest-fraction features), and (2) the CVSI feature rename from `ndvi_cvsi_k6` to
 `ndvi_cvsi_k8` (Step 2's corrected optimal lag). Headline metrics moved by <0.001 (ROC-AUC
@@ -120,7 +122,7 @@ contribute in aggregate (52 features total vs. 20 before the FLDAS/land-cover ex
 This pipeline explicitly extends **Biswas, U., Mahato, S., & Joshi, P.K. (2025)**, the
 paper cited at the bottom of this README, which uses **MaxEnt (Maximum Entropy)** for
 forest-fire susceptibility mapping in India. Until this run, no direct MaxEnt comparison
-existed anywhere in this project. Step 6 now trains a real MaxEnt model
+existed anywhere in this project. Step 7 now trains a real MaxEnt model
 (`elapid.MaxentModel` v1.0.4 — a scikit-learn-compatible reimplementation of Phillips et
 al.'s algorithm, `feature_types=['linear','hinge','product']`, cloglog transform) on this
 project's own 52-feature table and evaluates it on the **identical held-out test set**
@@ -161,7 +163,7 @@ straightforward measured result, not tuned in either model's favor. Outputs:
 This model is **not a preprocessing dependency for a PINN** — nothing downstream reads its
 outputs. It's kept deliberately as a standalone classical-ML baseline (now with two
 reference points — Random Forest and MaxEnt) to compare a future PINN against (decision
-made 2026-08-04; see the `integrated-fire-risk-model` skill for the full reasoning). Step 5,
+made 2026-08-04; see the `integrated-fire-risk-model` skill for the full reasoning). Step 6,
 by contrast, *is* necessary preprocessing — it's the one place LULC features get built and
 every other step's output gets assembled into a single ML-ready table, which a PINN needs
 regardless of model architecture.
@@ -170,12 +172,12 @@ regardless of model architecture.
 
 ```bash
 pip install -r requirements.txt
-jupyter nbconvert --to notebook --execute --inplace --ExecutePreprocessor.kernel_name=firerisk-anaconda3 --ExecutePreprocessor.timeout=1800 "Step5_Integrated_FireRisk_Analysis.ipynb"
-jupyter nbconvert --to notebook --execute --inplace --ExecutePreprocessor.kernel_name=firerisk-anaconda3 --ExecutePreprocessor.timeout=3600 "Step6_FireRisk_Susceptibility_Model.ipynb"
+jupyter nbconvert --to notebook --execute --inplace --ExecutePreprocessor.kernel_name=firerisk-anaconda3 --ExecutePreprocessor.timeout=1800 "Step6_Integrated_FireRisk_Analysis.ipynb"
+jupyter nbconvert --to notebook --execute --inplace --ExecutePreprocessor.kernel_name=firerisk-anaconda3 --ExecutePreprocessor.timeout=3600 "Step7_FireRisk_Susceptibility_Model.ipynb"
 ```
 
-Step 5 requires Steps 1, 2, 3, and 4 to have already run (reads their outputs directly).
-Step 6 requires Step 5's parquet. Step 6's total wall time is now ~50 min (measured
+Step 6 requires Steps 1, 2, 3, and 4 to have already run (reads their outputs directly).
+Step 7 requires Step 6's parquet. Step 7's total wall time is now ~50 min (measured
 2026-08-17: 2,996.7 sec) — up from ~22 min before the MaxEnt baseline was added, since
 MaxEnt's 150,000-row fit alone takes ~23.3 min; the `--ExecutePreprocessor.timeout` above
 is a per-cell limit, not a total-notebook limit, and 3600 sec comfortably covers the
