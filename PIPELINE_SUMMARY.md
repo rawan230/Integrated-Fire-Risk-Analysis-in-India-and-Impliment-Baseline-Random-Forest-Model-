@@ -18,21 +18,26 @@ project-original, no literature precedent.
 
 ## Resolution — Every Source, Compared Against Biswas et al. (2025)
 
-**Caveat before the table**: the "~5km" figure for Biswas et al.'s working
-resolution comes from this project's own prior design notes (`CDR_PINN_Diffusion_
-Design.md` §8), not from an independent re-read of that paper by this document —
-**verify the exact figure directly against Biswas, Mahato & Joshi (2025) before
-using it as a quantitative claim in the paper**. Everything else in the table (this
-project's own native/reprojected resolutions) is verified directly against the
-actual data files.
+**Corrected 2026-08-18**: the previous "~5km" figure below was explicitly flagged as
+unverified guesswork from prior design notes. It has now been replaced with the real
+number, extracted directly from the user's own copy of the paper: **"these datasets
+were in raster format with a spatial resolution of 0.25° × 0.25°"** — the common grid
+Biswas et al. resampled their forest-fire-occurrence conditioning factors onto for the
+actual MaxEnt run. (Individual source datasets still have their own differing *native*
+resolutions per their Table 2 — e.g. NDVI/LST at 0.05°, FLDAS/GPM at 0.1°, GLDAS at
+0.25°, LULC at 300m — but 0.25° is the resolution their model actually consumes.)
+0.25° ≈ 27.8 km north–south and ≈ 26 km east–west at India's mid-latitude (~20°N,
+where longitude spacing shrinks by cos(20°) ≈ 0.94) — call it **~27 km per axis, ~730
+km² per pixel**, not ~5km/~25km². This makes the resolution gap markedly larger than
+previously stated.
 
-| Source | Native spatial res. | Native temporal res. | Grid used in this project | vs. Biswas et al. (~5km*) |
+| Source | Native spatial res. | Native temporal res. | Grid used in this project | vs. Biswas et al. (0.25° ≈ 27km) |
 |---|---|---|---|---|
-| MODIS NDVI (MOD13A3.061) | 1km | Monthly | 1km — **defines** the shared grid | 5× finer per axis, **25× finer per pixel area** |
-| MODIS LST (MOD11A2.061) | 1km | 8-day composite → aggregated monthly | 1km (reprojected to NDVI grid) | 5× finer per axis, 25× finer per pixel area |
-| ESA-CCI/C3S LULC (forest fraction + 22-class) | 300m | Annual | 1km (area-weighted fractional aggregation, §Step 4/5) | Native 300m is ~17× finer per axis than 5km; the aggregated 1km *output* is still 5× finer, while the aggregation itself (unlike FLDAS below) genuinely averages real sub-pixel detail, not fabricated detail |
-| FLDAS climatic (FLDAS_NOAH01_C_GL_M) | **~11km (0.1°)** | Monthly | 1km (bilinearly interpolated onto the shared grid) | Native ~11km is **2.2× coarser** than Biswas et al.'s ~5km, not finer — see note below |
-| MODIS active fire (FIRMS, Step 1 label) | 1km nominal | Daily detections, rasterized to the study's monthly cadence | 1km (exact affine lookup, no resampling) | 5× finer per axis |
+| MODIS NDVI (MOD13A3.061) | 1km | Monthly | 1km — **defines** the shared grid | **~27× finer per axis, ~730× finer per pixel area** |
+| MODIS LST (MOD11A2.061) | 1km | 8-day composite → aggregated monthly | 1km (reprojected to NDVI grid) | ~27× finer per axis, ~730× finer per pixel area |
+| ESA-CCI/C3S LULC (forest fraction + 22-class) | 300m | Annual | 1km (area-weighted fractional aggregation, §Step 4/5) | Native 300m is ~90× finer per axis than 0.25°; the aggregated 1km *output* is still ~27× finer, while the aggregation itself (unlike FLDAS below) genuinely averages real sub-pixel detail, not fabricated detail |
+| FLDAS climatic (FLDAS_NOAH01_C_GL_M) | **~11km (0.1°)** | Monthly | 1km (bilinearly interpolated onto the shared grid) | Native ~11km is still **~2.5× finer** than Biswas et al.'s 0.25°/~27km common grid |
+| MODIS active fire (FIRMS, Step 1 label) | 1km nominal | Daily detections, rasterized to the study's monthly cadence | 1km (exact affine lookup, no resampling) | ~27× finer per axis |
 
 **Honest note on FLDAS**: unlike NDVI/LST/LULC — which are genuinely native at
 (or finer than) 1km and are simply *reprojected/aggregated* onto the shared grid
@@ -45,26 +50,28 @@ new measurement. **This is precisely the reasoning behind the CDR-PINN's gridles
 architecture decision** (`CDR_PINN_Diffusion_Design_v2.md` §3): querying FLDAS at
 its own true ~11km resolution via a differentiable interpolator, rather than
 pre-resampling it onto a shared 1km grid, avoids overstating this variable's actual
-resolution. When this comparison goes into the paper, state NDVI/LST/LULC's 25×
-pixel-area advantage and FLDAS's genuine ~11km resolution as two separate, honest
-claims — don't let FLDAS ride on the same "25× finer" framing the other sources
-earn legitimately.
+resolution. When this comparison goes into the paper, state NDVI/LST/LULC's ~730×
+pixel-area advantage and FLDAS's genuine ~11km resolution (still ~6× finer per area
+than Biswas et al.'s 0.25° grid) as two separate, honest claims — don't let FLDAS ride
+on the same "~730× finer" framing the other sources earn legitimately.
 
 ### What resolution actually means, and why it matters this much
 
 **Concretely**: "resolution" is the ground area one pixel represents. A 1km pixel
-covers 1 km²; a 5km pixel covers 5×5 = **25 km²** — this is why linear and areal
-comparisons diverge (5× finer *per axis* is 25× finer *per pixel*, i.e. 25× more
-independent spatial observations over the same land area). This distinction matters
-because "25× finer" sounds like a modest sharpening but is actually a 25-fold
-increase in the number of distinct data points describing the same country.
+covers 1 km²; a 0.25° (~27km) pixel covers roughly 27×27 ≈ **730 km²** — this is why
+linear and areal comparisons diverge (~27× finer *per axis* is ~730× finer *per
+pixel*, i.e. ~730× more independent spatial observations over the same land area).
+This distinction matters because "27× finer" sounds like a modest sharpening but is
+actually a ~730-fold increase in the number of distinct data points describing the
+same country.
 
 **Made concrete with this project's own numbers**: Step 5 established national mean
 forest fraction at ~10.2–10.7% of India's ~3.287 million km² land area — roughly
 **335,000–350,000 km² of forest**. At 1km resolution that's on the order of
-**335,000–350,000 individual forest pixels**; at Biswas et al.'s ~5km it would be
-roughly **13,000–14,000** — a ~25× difference in how many independent forest
-observations the model ever sees, not an abstract ratio.
+**335,000–350,000 individual forest pixels**; at Biswas et al.'s actual 0.25°
+(~730 km²/pixel) working resolution it would be roughly **460–480 pixels** — a ~730×
+difference in how many independent forest observations the model ever sees, not an
+abstract ratio.
 
 **Why this specifically matters for *fire* risk, not just "more data is better" in
 general**:
@@ -509,9 +516,21 @@ neighboring/mixed cells still carry real information at the 1km output resolutio
 **[STANDARD]**.
 
 **Results**: RH shows the most extensive significant trend (46.6% of valid pixels,
-overwhelmingly increasing), soil moisture next (40.4%). **Disclosed limitation**:
-burned area (Biswas et al.'s 11th variable) not covered — no MCD64A1/FireCCI/GABAM
-archive in this project.
+overwhelmingly increasing), soil moisture next (40.4%). **Corrected 2026-08-18**:
+Biswas et al.'s actual predictor set (their Table 3) is **15 variables**, not 11 —
+verified by direct extraction from the user's own copy of the paper. Burned area isn't
+one of the 15 (it's a Table 2 dataset, not a Table 3 predictor), so it was never
+actually the sole gap. The real gaps against their 15 are **distance to
+roads/railways/waterways** (OSM 2022, 10.8% combined contribution in their model) and
+**slope/aspect/elevation** (DEM-derived, 9.7% combined contribution) — six variables
+this pipeline has not computed, not one. See `METHODOLOGY.md`'s Step 4 section for the
+full corrected variable table.
+
+**Closed 2026-08-18**: all six built in `Terrain_Accessibility_Analysis/`, a new
+independent step run alongside Step 4 and feeding Step 5 — see that folder's README for
+full results and methodology. This pipeline now covers all 15 of Biswas et al.'s real
+predictor variables. Not yet wired into Step 5's pixel table or Step 6's retrained
+model.
 
 ---
 
