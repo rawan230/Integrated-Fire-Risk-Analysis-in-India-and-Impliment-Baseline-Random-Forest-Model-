@@ -532,9 +532,9 @@ Step 5a (`Terrain_Elevation_Slope_Aspect_Analysis/`) and Step 5b
 Step 6 (Integration, bumped from Step 5 to make room) — see each repo's own README for
 full results and methodology. This pipeline now covers all 15 of Biswas et al.'s real
 predictor variables. **Wired into Step 6's pixel table 2026-08-20** (60-band stack /
-62-column parquet, up from 54/56 — see the Integration section below); Step 7's model
-has not yet been retrained on the expanded table, deliberately deferred as a separate
-follow-up task.
+62-column parquet, up from 54/56 — see the Integration section below); **Step 7's model
+was retrained on the expanded table the same day** (2026-08-20) — see the Step 6
+(Susceptibility Model) section below for results.
 
 ---
 
@@ -627,10 +627,20 @@ specifically *because* it's the established comparison point in the literature t
 project extends. **[STANDARD]**: Breiman (2001), *Machine Learning*, 45(1):5–32;
 Davis & Goadrich (2006), *ICML '06*, 233–240 [both cite-confirmed].
 
-**Current result**: ROC-AUC 0.9674, AP 0.6761, 5-fold CV 0.9670±0.0002. MaxEnt
-(`elapid`, trained on a ~450k-row stratified subsample of the training portion per
-MaxEnt's own textbook presence-background convention, evaluated on the full
-832,202-row test set) — training in progress.
+**Current result (retrained 2026-08-20 on the 58-feature table, after terrain +
+accessibility were wired into Step 6)**: Random Forest ROC-AUC 0.9683, AP 0.6796,
+5-fold CV 0.9679±0.0002 (up from 0.9674 / 0.6761 / 0.9670±0.0002 on the prior
+52-feature table). MaxEnt (`elapid`, trained on a 150,000-row stratified subsample of
+the training portion — recalibrated down from an original 450k-row target after a
+direct timing probe showed super-linear fit-time scaling on this data/library
+combination — evaluated on the full 832,202-row test set): ROC-AUC 0.9595, AP 0.6237
+(up from 0.9576 / 0.6111). Random Forest still outperforms MaxEnt by 0.0088 ROC-AUC /
+0.0559 AP. Top 5 features by Gini importance unchanged in kind (forest-fraction + NDVI
+variables dominate); of the 6 new terrain/accessibility features, `terrain_slope` is
+the strongest, ranking 6th overall (just outside the top 5) — a real, testable signal
+directly consistent with Step 5a's fire-coincidence finding (fires sit at +115% mean
+slope vs. the national average). See `Integrated_Analysis/README.md` for the full
+results table, per-fold AUCs, and complete feature-importance ranking.
 
 ---
 

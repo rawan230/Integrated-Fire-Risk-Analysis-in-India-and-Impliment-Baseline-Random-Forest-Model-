@@ -16,6 +16,12 @@
 > gap between the pipeline's ML-ready table and Biswas et al.'s real 15-variable predictor
 > set. Band/column counts below have been updated accordingly (54 → 60 bands, 56 → 62
 > columns).
+>
+> **Step 7 retrained 2026-08-20** on the expanded 58-feature table (`feature_cols =
+> [c for c in df.columns if c not in DROP_COLS]` picked up all 6 new terrain/accessibility
+> columns automatically, no code change needed — verified directly, not assumed). This is
+> the first Step 7 run that genuinely trains on all 15 of Biswas et al. (2025)'s predictor
+> variables. Results below are current as of this run.
 
 ## Step 6 — Integrated Multi-Factor Fire-Risk Feature Alignment
 
@@ -75,23 +81,15 @@ split out on 2026-08-18/19, closed 2026-08-20 (Step 4c cell loading Step 5a/5b's
 `*_native_1km.tif` outputs, verified already on the exact NDVI grid — no reprojection
 needed).
 
-> **Stale relative to the 2026-08-20 Step 6 update.** The results, feature-importance
-> ranking, and "52-feature set" language below describe the model as last trained
-> (2026-08-15), on Step 6's *previous* 56-column parquet (52 features). Step 6's output
-> now has 62 columns / 58 features after terrain + accessibility were wired in
-> (2026-08-20) — Step 7 has **not** yet been rerun against the new parquet (deliberately
-> deferred as a separate follow-up task). Because Step 7 dynamically picks up whatever
-> feature columns are present, re-running it will automatically train on all 58 features
-> including the 6 new terrain/accessibility ones; until that rerun happens, treat every
-> number in this section as describing the 52-feature-era model, not the current
-> `Integrated_FireRisk_Pixels.parquet`.
-
 ## Step 7 — Fire Susceptibility Model + Reproducibility Report
 
 **Input:** Step 6's `Integrated_FireRisk_Pixels.parquet` — dynamically picks up every
 feature column present (`feature_cols = [c for c in df.columns if c not in DROP_COLS]`),
-so it automatically retrained on the full 52-feature set (56 columns minus `lon`, `lat`,
-`fire_count`, `fire_ever`) once Step 6 was expanded with FLDAS + land cover.
+so it automatically retrained on the full 58-feature set (62 columns minus `lon`, `lat`,
+`fire_count`, `fire_ever`) once Step 6 was expanded with terrain + accessibility features
+(2026-08-20). Verified directly (not assumed): `DROP_COLS` is still exactly
+`["lon", "lat", "fire_count", "fire_ever"]` and no cell hardcodes a column count or name
+list, so no code change was needed for this retrain.
 
 Delivers:
 1. A Random Forest fire-susceptibility classifier evaluated on a held-out test set
@@ -104,58 +102,56 @@ Delivers:
    set, as a direct methodological comparison against Biswas et al. (2025) — the paper this
    pipeline extends, which itself uses MaxEnt for India forest-fire susceptibility mapping.
 
-### Results (retrained 2026-08-15 on the 52-feature set, after the forest-class + CVSI k8 fixes below)
+### Results (retrained 2026-08-20 on the 58-feature set, after terrain + accessibility were wired into Step 6)
 
-| Metric | Value |
-|---|---|
-| ROC-AUC (held-out test) | **0.9674** |
-| Average Precision | 0.6761 (no-skill baseline = 0.0649) |
-| 5-fold CV mean AUC | 0.9670 ± 0.0002 (CV = 0.02% — stable across folds) |
-| Bit-exact reproducibility | max abs diff 8.88e-16 (float64 summation-order noise from `n_jobs=-1`, not a real divergence) |
-| Train / test split | 3,328,807 / 832,202 pixels (80/20, stratified, 6.49% fire rate both sides) |
-| Training time | 188.1 sec (200 trees, max depth 20, 24 cores) |
+| Metric | New (58 features, 2026-08-20) | Old (52 features, 2026-08-15) |
+|---|---|---|
+| ROC-AUC (held-out test) | **0.9683** | 0.9674 |
+| Average Precision | **0.6796** (no-skill baseline = 0.0649) | 0.6761 |
+| 5-fold CV mean AUC | **0.9679 ± 0.0002** (CV = 0.02% — stable across folds) | 0.9670 ± 0.0002 |
+| Per-fold AUC | [0.9679, 0.9679, 0.9682, 0.9677, 0.9679] | not previously reported per-fold |
+| Bit-exact reproducibility | max abs diff 7.77e-16 (float64 summation-order noise from `n_jobs=-1`, not a real divergence); identical within 1e-9 tolerance | max abs diff 8.88e-16 |
+| Train / test split | 3,328,807 / 832,202 pixels (80/20, stratified, 6.49% fire rate both sides) | same |
+| Training time | 202.2 sec (200 trees, max depth 20, 24 cores) | 188.1 sec |
 
-**2026-08-15 re-run note:** this result reflects two upstream Step 6 fixes — (1) the
-`FOREST_CODES` reconciliation to Step 1's 13-code definition (adds LCCS 100/110 to the
-forest-fraction features), and (2) the CVSI feature rename from `ndvi_cvsi_k6` to
-`ndvi_cvsi_k8` (Step 2's corrected optimal lag). Headline metrics moved by <0.001 (ROC-AUC
-0.9676 → 0.9674, AP 0.6765 → 0.6761, CV mean 0.9671 → 0.9670 ± 0.0002) — not a red flag,
-just the model re-fit on slightly revised feature values. The more notable shift is in
-**feature importance**: `forest_frac_recent`/`forest_frac_current`/`forest_frac_baseline`
-jumped from mid-pack (~0.08–0.11) to the top 3 (0.160, 0.141, 0.112 respectively, ahead of
-`ndvi_mean` at 0.094), consistent with the corrected forest definition now capturing more
-fire-relevant forest area via the mosaic classes.
+**2026-08-20 re-run note:** ROC-AUC improved by +0.0009 and Average Precision by +0.0035
+after adding the 6 terrain/accessibility features (elevation, slope, aspect, distance to
+roads/railways/waterways) — a small but real, unforced improvement, consistent with this
+project's own Step 5a finding that fire pixels sit at markedly higher slope than the
+national average. This is the first Step 7 run that genuinely trains on all 15 of Biswas
+et al. (2025)'s predictor variables, not just the pipeline containing them.
 
-**2026-08-15 fix:** the 5-fold CV cell previously re-fit with `n_estimators=100` (half the
-trees of the headline `rf_model`, undocumented), so the reported CV stability numbers
-technically described a different, weaker model than the one whose AUC was reported as the
-headline result. The CV cell now uses identical hyperparameters to the reported model
-(`n_estimators=200, max_depth=20, min_samples_leaf=5, class_weight="balanced",
-random_state=42`) — a true apples-to-apples cross-validation. The corrected numbers round
-to the same 0.9671 ± 0.0002 as before the fix (per-fold AUCs shifted by <0.0002), so the
-earlier CV conclusion was directionally fine, but it's now backed by evidence about the
-actual reported model rather than a cheaper stand-in. This roughly doubled the CV cell's
-runtime (347.7 sec &rarr; 863.3 sec), pushing total notebook wall time from ~12.6 min to
-~21.7 min.
+Top 5 features by Gini importance (2026-08-20 re-run, 58-feature set):
+`forest_frac_recent` (0.1657), `forest_frac_current` (0.1198), `forest_frac_baseline`
+(0.1112), `ndvi_trend_2x12ma` (0.0851), `ndvi_mean` (0.0571) — forest-fraction and NDVI
+variables still dominate the top 5, same as the 52-feature-era model, but with
+`ndvi_trend_2x12ma` newly entering (previously outside the top 5; `ndvi_clim_june` has
+moved down to 7th).
 
-Top 5 features by Gini importance (2026-08-15 re-run, post forest-class reconciliation):
-`forest_frac_recent` (0.160), `forest_frac_current` (0.141), `forest_frac_baseline` (0.112),
-`ndvi_mean` (0.094), `ndvi_clim_june` (0.072) — forest-fraction and NDVI variables
-dominate; no single FLDAS or land-cover-class feature cracked the top 5, though they
-contribute in aggregate (52 features total vs. 20 before the FLDAS/land-cover expansion).
+**None of the 6 new terrain/accessibility features cracked the top 5** — but
+`terrain_slope` is the highest-ranked of them and landed at **6th place overall**
+(Gini importance 0.0492), immediately behind the top 5 and ahead of all 52 previously-
+existing features except `ndvi_mean`. This is a real, testable, and confirmed signal:
+Step 5a's fire-coincidence finding (fires sit at +115% mean slope vs. the national
+average) does translate into predictive importance for the Random Forest, just not
+enough to unseat the forest-fraction/NDVI features that already dominated. The other 5
+new features rank further down: `terrain_elevation` 11th (0.0198), `access_dist_roads`
+22nd (0.0097), `access_dist_railways` 29th (0.0069), `terrain_aspect` 36th (0.0050),
+`access_dist_waterways` 39th (0.0040) — out of 58 total features. Full ranking available
+in `Model_Outputs/Feature_Importance.png`.
 
 ### MaxEnt baseline (Biswas et al. 2025 comparison, added 2026-08-17)
 
 This pipeline explicitly extends **Biswas, U., Mahato, S., & Joshi, P.K. (2025)**, the
 paper cited at the bottom of this README, which uses **MaxEnt (Maximum Entropy)** for
-forest-fire susceptibility mapping in India. Until this run, no direct MaxEnt comparison
-existed anywhere in this project. Step 7 now trains a real MaxEnt model
+forest-fire susceptibility mapping in India. Step 7 trains a real MaxEnt model
 (`elapid.MaxentModel` v1.0.4 — a scikit-learn-compatible reimplementation of Phillips et
 al.'s algorithm, `feature_types=['linear','hinge','product']`, cloglog transform) on this
-project's own 52-feature table and evaluates it on the **identical held-out test set**
-(832,202 pixels) as the Random Forest above — a direct, apples-to-apples comparison, not a
-citation of Biswas et al.'s own reported numbers (which would be a weaker comparison given
-their different feature set/resolution).
+project's own 58-feature table (retrained 2026-08-20 alongside the Random Forest, on the
+same expanded parquet including terrain/accessibility) and evaluates it on the
+**identical held-out test set** (832,202 pixels) as the Random Forest above — a direct,
+apples-to-apples comparison, not a citation of Biswas et al.'s own reported numbers (which
+would be a weaker comparison given their different feature set/resolution).
 
 **MaxEnt is classically trained on presence + background samples, not exhaustive
 full-image training** — standard practice in the species/habitat distribution modeling
@@ -171,14 +167,18 @@ the literature this method comes from.
 
 | Metric | Random Forest (headline) | MaxEnt (elapid) |
 |---|---|---|
-| ROC-AUC (held-out test, 832,202 px) | **0.9674** | 0.9576 |
-| Average Precision | **0.6761** | 0.6111 |
+| ROC-AUC (held-out test, 832,202 px) | **0.9683** | 0.9595 |
+| Average Precision | **0.6796** | 0.6237 |
 | Training rows | 3,328,807 (100% of train split) | 150,000 (4.51% of train split, stratified) |
-| Training time | 195.2 sec | 1,396.4 sec (23.3 min) |
-| Test-set inference time | 1.4 sec | 33.3 sec |
+| Training time | 202.2 sec | 1,486.8 sec (24.8 min) |
+| Test-set inference time | 1.4 sec | 34.3 sec |
 
-Random Forest outperforms MaxEnt on this feature set by 0.0098 ROC-AUC (0.9674 vs. 0.9576)
-and 0.0650 Average Precision — a modest but consistent RF advantage, plausible given RF
+(Prior 52-feature-era numbers, 2026-08-17: Random Forest ROC-AUC 0.9674 / AP 0.6761;
+MaxEnt ROC-AUC 0.9576 / AP 0.6111 — both models improved after terrain/accessibility
+features were added, MaxEnt included since it's trained on the same expanded table.)
+
+Random Forest outperforms MaxEnt on this feature set by 0.0088 ROC-AUC (0.9683 vs. 0.9595)
+and 0.0559 Average Precision — a modest but consistent RF advantage, plausible given RF
 trains on the full 3.3M-row training set with a more flexible (non-linear, non-additive)
 decision boundary, while MaxEnt here is a linear/hinge/product-feature exponential-family
 model trained on a 4.5%-of-training-set stratified subsample. This is reported as a
@@ -205,11 +205,12 @@ jupyter nbconvert --to notebook --execute --inplace --ExecutePreprocessor.kernel
 
 Step 6 requires Steps 1, 2, 3, 4, and 5 (5a Terrain + 5b Accessibility) to have already run
 (reads their outputs directly, no in-notebook recomputation). Step 7 requires Step 6's
-parquet. Step 7's total wall time is now ~50 min (measured
-2026-08-17: 2,996.7 sec) — up from ~22 min before the MaxEnt baseline was added, since
-MaxEnt's 150,000-row fit alone takes ~23.3 min; the `--ExecutePreprocessor.timeout` above
-is a per-cell limit, not a total-notebook limit, and 3600 sec comfortably covers the
-MaxEnt training cell with margin.
+parquet. Step 7's total wall time is now ~56 min (measured 2026-08-20: 3,352.5 sec, on the
+expanded 58-feature table) — up slightly from ~50 min on the 52-feature table (measured
+2026-08-17: 2,996.7 sec), since MaxEnt's 150,000-row fit takes proportionally longer with
+more features (~24.8 min vs. ~23.3 min); the `--ExecutePreprocessor.timeout` above is a
+per-cell limit, not a total-notebook limit, and 3600 sec comfortably covers the MaxEnt
+training cell with margin.
 
 ## Outputs
 
