@@ -531,15 +531,26 @@ Step 5a (`Terrain_Elevation_Slope_Aspect_Analysis/`) and Step 5b
 (`Distance_Roads_Railways_Waterways_Analysis/`), run alongside Step 4 and feeding
 Step 6 (Integration, bumped from Step 5 to make room) — see each repo's own README for
 full results and methodology. This pipeline now covers all 15 of Biswas et al.'s real
-predictor variables. Not yet wired into Step 6's pixel table or Step 7's retrained
-model.
+predictor variables. **Wired into Step 6's pixel table 2026-08-20** (60-band stack /
+62-column parquet, up from 54/56 — see the Integration section below); Step 7's model
+has not yet been retrained on the expanded table, deliberately deferred as a separate
+follow-up task.
 
 ---
 
-## Step 5 — Integrated Alignment (54 features assembled)
+## Step 5 — Integrated Alignment (60 features assembled)
 
 > **Renumbered 2026-08-17**: was "Step 4" before — moved to Step 5, after FLDAS
-> (now Step 4), since it depends on FLDAS's output and always ran after it.
+> (now Step 4), since it depends on FLDAS's output and always ran after it. (This
+> section's own heading is stale by one further renumbering pass — see the
+> Integration notebook's actual current numbering, Step 6 as of 2026-08-19 — but is
+> left as-is here since fixing the full renumbering trail is out of this task's scope;
+> only the feature/column counts below have been corrected.)
+>
+> **Updated 2026-08-20**: Step 5a (Terrain) + Step 5b (Accessibility)'s 6 bands
+> (elevation, slope, aspect, distance to roads/railways/waterways) are now wired in —
+> 54 → 60 feature layers, 56 → 62 columns in the flattened pixel table. This closes
+> the pipeline's last gap against Biswas et al.'s real 15-variable predictor set.
 
 ```
 forest_frac(i,j) = (1/N_sub) Σ_{sub-pixel ∈ cell(i,j)} 1[LULC_sub ∈ ForestCodes]
@@ -567,8 +578,10 @@ and mosaic-herbaceous). National mean forest fraction rose ~7.8–8.0% → **10.
 these three features became the **top 3** Step 6 predictors by Gini importance
 after the fix.
 
-**Result**: `Integrated_FireRisk_Pixels.parquet`, **4,161,009 pixels × 56 columns**
-(54 features + lon + lat).
+**Result**: `Integrated_FireRisk_Pixels.parquet`, **4,161,009 pixels × 62 columns**
+(60 features + lon + lat), following the 2026-08-20 addition of Step 5a/5b's 6
+terrain/accessibility bands (`terrain_elevation`, `terrain_slope`, `terrain_aspect`,
+`access_dist_roads`, `access_dist_railways`, `access_dist_waterways`).
 
 ---
 

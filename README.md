@@ -9,6 +9,13 @@
 > moved again to `Step6_...`/`Step7_...` to make room for a new Step 5 (Terrain &
 > Accessibility Analysis, its own folder/repo) inserted between FLDAS and this step. No
 > content, code, or results changed either time, only the labels and filenames.
+>
+> **Terrain & Accessibility wired in 2026-08-20.** Step 5a/5b's 6 bands (elevation, slope,
+> aspect, distance to roads/railways/waterways) existed in their own repos since
+> 2026-08-18 but were not read by this notebook until now — this was the last remaining
+> gap between the pipeline's ML-ready table and Biswas et al.'s real 15-variable predictor
+> set. Band/column counts below have been updated accordingly (54 → 60 bands, 56 → 62
+> columns).
 
 ## Step 6 — Integrated Multi-Factor Fire-Risk Feature Alignment
 
@@ -23,9 +30,15 @@ aligned dataset:
 | Step 3 (LST) | 5 features: Day/Night anomaly, DTR anomaly, monthly Mann-Kendall τ (Day/Night) |
 | Step 4 (FLDAS) | 12 features: air temp/wind/precip/RH/soil moisture/net LW radiation — anomaly + monthly Mann-Kendall τ each |
 | Step 4 (land cover) | 22 features: ESA CCI/C3S 2020 base-class fractional cover per pixel |
+| Step 5a (Terrain) | 3 features: elevation, slope, aspect (SRTMGL3 90m DEM) |
+| Step 5b (Accessibility) | 3 features: distance to roads, railways, waterways (Geofabrik OSM 2022) |
 | This notebook | 4 features: LULC forest fraction (2001/2020/2022) + forest loss — the one input not aligned anywhere else |
 
-**Total: 54 feature layers**, plus `lon`/`lat` = 56 columns in the flattened pixel table.
+**Total: 60 feature layers**, plus `lon`/`lat` = 62 columns in the flattened pixel table.
+This is the first run in which the trained feature table genuinely covers all 15 of
+Biswas et al. (2025)'s real predictor variables (see the "Terrain & accessibility wired
+in" note below) — previously only 9 of 15 were present, despite Step 5a/5b's work
+existing separately since 2026-08-18.
 
 **2026-08-15 fixes:**
 - **CVSI k6 → k8**: Step 2's CVSI optimal-lag was corrected from k=6 to k=8 after extending
@@ -46,18 +59,32 @@ aligned dataset:
 
 ### What it produces
 
-1. `Integrated_FireRisk_Stack.tif` — 54-band GeoTIFF, one band per feature, identical
+1. `Integrated_FireRisk_Stack.tif` — 60-band GeoTIFF, one band per feature, identical
    pixel grid across bands.
 2. `Integrated_FireRisk_Pixels.parquet` — same stack flattened to one row per valid
-   in-India pixel (4,161,009 pixels × 56 columns), `fire_ever` as the label.
+   in-India pixel (4,161,009 pixels × 62 columns), `fire_ever` as the label.
 3. `Integrated_Monthly_TimeSeries.csv` — national-mean NDVI + LST Day/Night + FLDAS
    climatic variables + fire counts, joined on `(year, month)` (266 months × 25 columns).
 
-Every documented variable source (NDVI, LST, FLDAS climatic variables, land cover) is
-wired in as of this run — this was the pending gap flagged in Step 4/FLDAS's own closing
-note ("wire into `Integrated_Analysis/Step6`"), closed by adding a Step 4b cell that loads
-FLDAS's `NDVI_Aligned_GeoTIFFs/*.tif` and the 22-band land-cover GeoTIFF the same way the
-existing LST-loading cell works.
+Every documented variable source (NDVI, LST, FLDAS climatic variables, land cover,
+terrain, accessibility) is wired in as of this run. FLDAS + land cover were the pending
+gap flagged in Step 4/FLDAS's own closing note, closed 2026-08-07 (Step 4b cell loading
+`NDVI_Aligned_GeoTIFFs/*.tif` and the 22-band land-cover GeoTIFF). Terrain + accessibility
+were the pending gap flagged repeatedly in this project's docs after Step 5a/5b were
+split out on 2026-08-18/19, closed 2026-08-20 (Step 4c cell loading Step 5a/5b's
+`*_native_1km.tif` outputs, verified already on the exact NDVI grid — no reprojection
+needed).
+
+> **Stale relative to the 2026-08-20 Step 6 update.** The results, feature-importance
+> ranking, and "52-feature set" language below describe the model as last trained
+> (2026-08-15), on Step 6's *previous* 56-column parquet (52 features). Step 6's output
+> now has 62 columns / 58 features after terrain + accessibility were wired in
+> (2026-08-20) — Step 7 has **not** yet been rerun against the new parquet (deliberately
+> deferred as a separate follow-up task). Because Step 7 dynamically picks up whatever
+> feature columns are present, re-running it will automatically train on all 58 features
+> including the 6 new terrain/accessibility ones; until that rerun happens, treat every
+> number in this section as describing the 52-feature-era model, not the current
+> `Integrated_FireRisk_Pixels.parquet`.
 
 ## Step 7 — Fire Susceptibility Model + Reproducibility Report
 
@@ -176,8 +203,9 @@ jupyter nbconvert --to notebook --execute --inplace --ExecutePreprocessor.kernel
 jupyter nbconvert --to notebook --execute --inplace --ExecutePreprocessor.kernel_name=firerisk-anaconda3 --ExecutePreprocessor.timeout=3600 "Step7_FireRisk_Susceptibility_Model.ipynb"
 ```
 
-Step 6 requires Steps 1, 2, 3, and 4 to have already run (reads their outputs directly).
-Step 7 requires Step 6's parquet. Step 7's total wall time is now ~50 min (measured
+Step 6 requires Steps 1, 2, 3, 4, and 5 (5a Terrain + 5b Accessibility) to have already run
+(reads their outputs directly, no in-notebook recomputation). Step 7 requires Step 6's
+parquet. Step 7's total wall time is now ~50 min (measured
 2026-08-17: 2,996.7 sec) — up from ~22 min before the MaxEnt baseline was added, since
 MaxEnt's 150,000-row fit alone takes ~23.3 min; the `--ExecutePreprocessor.timeout` above
 is a per-cell limit, not a total-notebook limit, and 3600 sec comfortably covers the
@@ -187,7 +215,7 @@ MaxEnt training cell with margin.
 
 ```
 Integrated_Outputs/
-├── Integrated_FireRisk_Stack.tif              # 54-band GeoTIFF (not tracked, ~large)
+├── Integrated_FireRisk_Stack.tif              # 60-band GeoTIFF (not tracked, ~large)
 ├── Integrated_FireRisk_Pixels.parquet          # ML-ready table (not tracked, ~large)
 ├── Integrated_FireRisk_Pixels_sample200k.csv   # 200k-row sample (tracked)
 ├── Integrated_Monthly_TimeSeries.csv           # monthly join table (tracked)
