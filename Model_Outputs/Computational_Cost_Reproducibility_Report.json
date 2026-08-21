@@ -14,49 +14,49 @@
     },
     {
       "stage": "Step 7: load integrated parquet",
-      "seconds": 0.36
+      "seconds": 4.06
     },
     {
       "stage": "Step 7: train Random Forest (test-split model)",
-      "seconds": 210.04
+      "seconds": 217.51
     },
     {
       "stage": "Step 7: test-set inference (Random Forest)",
-      "seconds": 1.455
+      "seconds": 1.773
     },
     {
       "stage": "Step 7: 5-fold cross-validation (5x refits)",
-      "seconds": 797.26
+      "seconds": 756.38
     },
     {
       "stage": "Step 7: full-grid inference (Random Forest, all valid pixels)",
-      "seconds": 6.53
+      "seconds": 6.929
     },
     {
       "stage": "Step 7: train MaxEnt (150k-row stratified subsample)",
-      "seconds": 1732.23
+      "seconds": 1289.93
     },
     {
       "stage": "Step 7: test-set inference (MaxEnt, full 832,202-row test set)",
-      "seconds": 34.631
+      "seconds": 30.953
     },
     {
       "stage": "Step 7: MaxEnt permutation importance (100k-row sample)",
-      "seconds": 228.47
+      "seconds": 225.68
     },
     {
       "stage": "Step 7: full-grid inference (MaxEnt, all valid pixels)",
-      "seconds": 302.059
+      "seconds": 271.746
     },
     {
       "stage": "Step 7: spatial-block CV (3 folds, RF + MaxEnt refit each)",
-      "seconds": 5059.96
+      "seconds": 5189.34
     }
   ],
   "model_performance": {
     "random_forest": {
-      "roc_auc": 0.9686576241491213,
-      "average_precision": 0.681418990296848
+      "roc_auc": 0.9701357605454071,
+      "average_precision": 0.6984224910368168
     },
     "maxent": {
       "roc_auc": 0.9594422627008947,
@@ -73,26 +73,26 @@
     ],
     "train_rows": 150000,
     "train_rows_pct_of_full_train": 4.51,
-    "train_seconds": 1732.2301383018494,
-    "test_inference_seconds": 34.63064217567444,
+    "train_seconds": 1289.926298379898,
+    "test_inference_seconds": 30.952608346939087,
     "roc_auc": 0.9594422627008947,
     "average_precision": 0.6245943517873778,
-    "roc_auc_vs_random_forest": 0.009215361448226544,
+    "roc_auc_vs_random_forest": 0.010693497844512345,
     "note": "training size recalibrated from an original 450,000-row target to 150,000 rows after a direct timing probe showed super-linear fit-time scaling with sample size on this data/library combination (450k did not finish within a 7200 sec cell timeout)"
   },
   "reproducibility": {
     "random_state": 42,
     "exact_bit_for_bit_match": false,
     "match_within_1e-9": true,
-    "max_abs_prediction_diff": 6.661338147750939e-16,
-    "cv_auc_mean": 0.9683248813851432,
-    "cv_auc_std": 0.00018363876230371312,
+    "max_abs_prediction_diff": 7.771561172376096e-16,
+    "cv_auc_mean": 0.9698480935002879,
+    "cv_auc_std": 0.0001836607212994317,
     "cv_scores": [
-      0.9682848225612575,
-      0.9683688613337103,
-      0.9686113187151162,
-      0.9680367394533116,
-      0.9683226648623204
+      0.9697846962531154,
+      0.9698877201531146,
+      0.9701452052250632,
+      0.9695746132928935,
+      0.9698482325772524
     ]
   },
   "spatial_block_cv": {
@@ -103,12 +103,12 @@
       {
         "model": "Random Forest",
         "fold": 0,
-        "roc_auc": 0.9465069128828283,
-        "average_precision": 0.4260247040712527,
+        "roc_auc": 0.9458572360355584,
+        "average_precision": 0.42334226567231514,
         "n_train_pixels": 2773877,
         "n_test_pixels": 1387132,
         "n_test_fire_pixels": 69369,
-        "train_seconds": 108.17
+        "train_seconds": 114.17
       },
       {
         "model": "MaxEnt",
@@ -118,17 +118,17 @@
         "n_train_pixels": 150000,
         "n_test_pixels": 1387132,
         "n_test_fire_pixels": 69369,
-        "train_seconds": 1860.75
+        "train_seconds": 1863.33
       },
       {
         "model": "Random Forest",
         "fold": 1,
-        "roc_auc": 0.9522504188758745,
-        "average_precision": 0.5826777452842024,
+        "roc_auc": 0.9520008440461143,
+        "average_precision": 0.5743355039926146,
         "n_train_pixels": 2774068,
         "n_test_pixels": 1386941,
         "n_test_fire_pixels": 124970,
-        "train_seconds": 111.65
+        "train_seconds": 116.67
       },
       {
         "model": "MaxEnt",
@@ -138,17 +138,17 @@
         "n_train_pixels": 150000,
         "n_test_pixels": 1386941,
         "n_test_fire_pixels": 124970,
-        "train_seconds": 1028.79
+        "train_seconds": 1132.62
       },
       {
         "model": "Random Forest",
         "fold": 2,
-        "roc_auc": 0.9514549956244938,
-        "average_precision": 0.5680379720913419,
+        "roc_auc": 0.9512022022969009,
+        "average_precision": 0.556153198394267,
         "n_train_pixels": 2774073,
         "n_test_pixels": 1386936,
         "n_test_fire_pixels": 75735,
-        "train_seconds": 107.77
+        "train_seconds": 114.84
       },
       {
         "model": "MaxEnt",
@@ -158,7 +158,7 @@
         "n_train_pixels": 150000,
         "n_test_pixels": 1386936,
         "n_test_fire_pixels": 75735,
-        "train_seconds": 1667.44
+        "train_seconds": 1674.52
       }
     ],
     "summary": [
@@ -170,17 +170,17 @@
       },
       {
         "model": "Random Forest",
-        "mean_auc": 0.9500707757943988,
-        "std_auc": 0.003111914792625338,
+        "mean_auc": 0.9496867607928579,
+        "std_auc": 0.003340419443868368,
         "n_folds": 3
       }
     ],
-    "wall_seconds": 5059.964585542679
+    "wall_seconds": 5189.340485334396
   },
   "memory_gb": {
     "lst_naive_dense_stack_estimate": 217.0,
     "lst_streaming_accumulators_actual": 37.2,
-    "step5_process_resident": 4.760154112
+    "step5_process_resident": 5.221203968
   },
   "storage_mb": {
     "parquet": 551.00229,
@@ -199,5 +199,5 @@
     "elapid": "1.0.4",
     "cpu_cores": 24
   },
-  "notebook_total_seconds": 8622.05628824234
+  "notebook_total_seconds": 8241.194905281067
 }
