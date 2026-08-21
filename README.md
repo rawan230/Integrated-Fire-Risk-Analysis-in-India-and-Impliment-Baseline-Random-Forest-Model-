@@ -22,6 +22,26 @@
 > columns automatically, no code change needed — verified directly, not assumed). This is
 > the first Step 7 run that genuinely trains on all 15 of Biswas et al. (2025)'s predictor
 > variables. Results below are current as of this run.
+>
+> **Data-leakage fix, 2026-08-21 — Step 7 results below are now STALE, pending retrain.**
+> A literature-grounded audit found that `forest_frac_recent` (2020) and
+> `forest_frac_current` (2022) — two of the model's top-3 Gini-importance features,
+> combined ~0.40 importance with `forest_frac_baseline` — fall *inside* the same
+> 2000-11-01–2022-12-15 window that the static, pooled `fire_ever` label spans.
+> Published post-fire land-cover-change literature (ESA-CCI 300m + MODIS burned area)
+> documents burned-forest pixels being reclassified to shrubland/agriculture in
+> *subsequent* LULC epochs — i.e. these features could partly encode the outcome of
+> fire, not a pre-fire risk condition. Step 6 now exports **only `forest_frac_baseline`
+> (2001)** as the forest-fraction feature; `forest_frac_recent`, `forest_frac_current`,
+> and `forest_loss_baseline_to_recent` were dropped from the parquet/GeoTIFF (60 → 57
+> bands, 62 → 59 columns, 58 → 55 features). See the dedicated markdown cell in
+> `Step6_Integrated_FireRisk_Analysis.ipynb`'s LULC section for the full reasoning.
+> **The Step 7 results and feature-importance numbers in this README below have not yet
+> been regenerated against the new 55-feature table — they still reflect the pre-fix,
+> leaky 58-feature run and are kept here only as historical record until Step 7 is
+> retrained (separate task, not done as part of this fix).** The CDR-PINN work
+> (`Physics_Informed_FireRisk_Model/`) also currently pulls its `forest_frac` covariate
+> from the now-removed `forest_frac_recent` column and needs a corresponding update.
 
 ## Step 6 — Integrated Multi-Factor Fire-Risk Feature Alignment
 
@@ -38,13 +58,29 @@ aligned dataset:
 | Step 4 (land cover) | 22 features: ESA CCI/C3S 2020 base-class fractional cover per pixel |
 | Step 5a (Terrain) | 3 features: elevation, slope, aspect (SRTMGL3 90m DEM) |
 | Step 5b (Accessibility) | 3 features: distance to roads, railways, waterways (Geofabrik OSM 2022) |
-| This notebook | 4 features: LULC forest fraction (2001/2020/2022) + forest loss — the one input not aligned anywhere else |
+| This notebook | 1 feature: LULC forest fraction, 2001 baseline only (`forest_frac_baseline`) — the one input not aligned anywhere else |
 
-**Total: 60 feature layers**, plus `lon`/`lat` = 62 columns in the flattened pixel table.
+**Total: 57 feature layers**, plus `lon`/`lat` = 59 columns in the flattened pixel table.
 This is the first run in which the trained feature table genuinely covers all 15 of
 Biswas et al. (2025)'s real predictor variables (see the "Terrain & accessibility wired
 in" note below) — previously only 9 of 15 were present, despite Step 5a/5b's work
 existing separately since 2026-08-18.
+
+**2026-08-21 data-leakage fix:** `forest_frac_recent` (2020), `forest_frac_current`
+(2022), and `forest_loss_baseline_to_recent` were removed from the exported feature set
+(60 → 57 bands, 62 → 59 columns). `fire_ever` is a single static label pooling every fire
+from 2000-11-01 through 2022-12-15; the 2020/2022 LULC snapshots fall inside that same
+window, and published post-fire land-cover-change literature documents burned forest
+pixels commonly being reclassified to shrubland/agriculture in the *next* LULC epoch —
+i.e. these features risked encoding the outcome of fire rather than a pre-fire condition.
+This mattered because these three features were the model's top-3 Gini-importance
+features pre-fix (combined ~0.40). Only `forest_frac_baseline` (2001) — the year closest
+to a genuine pre-fire condition relative to the bulk of the study period — is kept, under
+its existing name (no rename, to avoid a ripple into downstream references). The
+underlying LULC-loading/reclassification code (`load_forest_fraction()`, the 2020/2022
+reads) is untouched — only the recent/current/loss columns were dropped from the final
+output. See the dedicated markdown cell in the notebook's LULC section for the full
+reasoning.
 
 **2026-08-15 fixes:**
 - **CVSI k6 → k8**: Step 2's CVSI optimal-lag was corrected from k=6 to k=8 after extending
@@ -65,10 +101,10 @@ existing separately since 2026-08-18.
 
 ### What it produces
 
-1. `Integrated_FireRisk_Stack.tif` — 60-band GeoTIFF, one band per feature, identical
+1. `Integrated_FireRisk_Stack.tif` — 57-band GeoTIFF, one band per feature, identical
    pixel grid across bands.
 2. `Integrated_FireRisk_Pixels.parquet` — same stack flattened to one row per valid
-   in-India pixel (4,161,009 pixels × 62 columns), `fire_ever` as the label.
+   in-India pixel (4,161,009 pixels × 59 columns), `fire_ever` as the label.
 3. `Integrated_Monthly_TimeSeries.csv` — national-mean NDVI + LST Day/Night + FLDAS
    climatic variables + fire counts, joined on `(year, month)` (266 months × 25 columns).
 
@@ -216,7 +252,7 @@ training cell with margin.
 
 ```
 Integrated_Outputs/
-├── Integrated_FireRisk_Stack.tif              # 60-band GeoTIFF (not tracked, ~large)
+├── Integrated_FireRisk_Stack.tif              # 57-band GeoTIFF (not tracked, ~large)
 ├── Integrated_FireRisk_Pixels.parquet          # ML-ready table (not tracked, ~large)
 ├── Integrated_FireRisk_Pixels_sample200k.csv   # 200k-row sample (tracked)
 ├── Integrated_Monthly_TimeSeries.csv           # monthly join table (tracked)
