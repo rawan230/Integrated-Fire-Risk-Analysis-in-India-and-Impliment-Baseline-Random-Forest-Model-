@@ -1,0 +1,105 @@
+{
+  "grid_results": [
+    {
+      "params": {
+        "max_depth": 20,
+        "min_samples_leaf": 5
+      },
+      "val_auc": 0.9679390157903696,
+      "val_ap": 0.67718040448988
+    },
+    {
+      "params": {
+        "max_depth": 15,
+        "min_samples_leaf": 5
+      },
+      "val_auc": 0.964693034622665,
+      "val_ap": 0.6456325199741533
+    },
+    {
+      "params": {
+        "max_depth": 25,
+        "min_samples_leaf": 3
+      },
+      "val_auc": 0.9693533835134626,
+      "val_ap": 0.6933385059227223
+    },
+    {
+      "params": {
+        "max_depth": 20,
+        "min_samples_leaf": 10
+      },
+      "val_auc": 0.9679774901007956,
+      "val_ap": 0.6781085361533432
+    }
+  ],
+  "winner_params": {
+    "max_depth": 25,
+    "min_samples_leaf": 3
+  },
+  "winner_val_auc": 0.9693533835134626,
+  "test_auc": 0.9697918939537786,
+  "test_ap": 0.6961079515030937,
+  "top_importances": [
+    [
+      "forest_frac_baseline",
+      0.20663645090654656
+    ],
+    [
+      "ndvi_trend_2x12ma",
+      0.08864654206430507
+    ],
+    [
+      "ndvi_mean",
+      0.08584226022718111
+    ],
+    [
+      "ndvi_below_threshold",
+      0.07485426800060013
+    ],
+    [
+      "ndvi_clim_june",
+      0.0629299867592184
+    ],
+    [
+      "landcover_frac_LC22_60_tree_broadleaved_deciduous",
+      0.05713633633083896
+    ],
+    [
+      "terrain_slope",
+      0.045579905674309175
+    ],
+    [
+      "landcover_frac_LC22_10_cropland_rainfed",
+      0.0387877228333046
+    ],
+    [
+      "terrain_elevation",
+      0.025542373071697114
+    ],
+    [
+      "fldas_rh_anomaly",
+      0.020279753302334075
+    ],
+    [
+      "landcover_frac_LC22_100_mosaic_tree_and_shrub",
+      0.019245072547680066
+    ],
+    [
+      "fldas_netlwradiation_anomaly",
+      0.018698420099681163
+    ],
+    [
+      "fldas_precip_anomaly",
+      0.01793881737873952
+    ],
+    [
+      "landcover_frac_LC22_20_cropland_irrigated",
+      0.01773475411611559
+    ],
+    [
+      "access_dist_roads",
+      0.012700719920880493
+    ]
+  ]
+}
