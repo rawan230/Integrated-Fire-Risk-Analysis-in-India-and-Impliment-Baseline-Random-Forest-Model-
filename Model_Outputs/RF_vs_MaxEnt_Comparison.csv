@@ -1,3 +1,3 @@
 model,train_rows,train_rows_pct_of_full_train,roc_auc,average_precision,train_seconds,test_inference_seconds
-Random Forest (Step 7 headline),3328807,100.0,0.9682875712915712,0.6795679243161414,202.22,1.363
-"MaxEnt (elapid, Biswas et al. 2025 comparison)",150000,4.51,0.9594594063686216,0.6236910125967826,1486.79,34.309
+Random Forest (Step 7 headline),3328807,100.0,0.9686576241491213,0.681418990296848,210.04,1.455
+"MaxEnt (elapid, Biswas et al. 2025 comparison)",150000,4.51,0.9594422627008947,0.6245943517873778,1732.23,34.631
