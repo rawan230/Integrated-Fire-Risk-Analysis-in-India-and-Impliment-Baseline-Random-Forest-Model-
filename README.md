@@ -55,6 +55,20 @@
 > in the notebook (headline model, bit-exact re-run, 5-fold CV, spatial-block CV) now uses
 > `max_depth=25, min_samples_leaf=3`. Clean execution, 0 cell errors. **Results below are
 > current as of this run** — the STALE flag that previously sat here is resolved.
+>
+> **Specific-humidity completeness fix, 2026-08-22.** Step 4's FLDAS notebook added full
+> spatial treatment (anomaly + monthly Mann-Kendall trend) for specific humidity
+> (`Qair_f_tavg`), which previously only relative humidity received. Step 6 now loads the
+> two resulting GeoTIFFs (`SpecificHumidity_anomaly_mean_on_NDVI_grid.tif`,
+> `MannKendall_tau_SpecificHumidity_monthly_on_NDVI_grid.tif`) as `fldas_qair_anomaly` and
+> `fldas_qair_mk_tau_monthly`, following the exact existing FLDAS dict pattern (same
+> warn-and-skip-on-missing-file behavior). Purely additive — no existing feature was
+> changed or removed — bringing the counts to 59 bands, 61 columns, 57 features (up from
+> 57/59/55). **Downstream impact (flagged, not fixed here):** Step 7
+> (`Step7_FireRisk_Susceptibility_Model.ipynb`) picks up new columns automatically via its
+> `feature_cols = [c for c in df.columns if c not in DROP_COLS]` pattern, but has not been
+> re-run against this expanded table as part of this fix — its results below still reflect
+> the 55-feature run.
 
 ## Step 6 — Integrated Multi-Factor Fire-Risk Feature Alignment
 
@@ -67,17 +81,27 @@ aligned dataset:
 | Step 1 (fire points) | fire count + binary fire-ever label, rasterized onto the grid |
 | Step 2 (NDVI) | 9 features: QA mean, climatology, anomaly, trend, residual, Mann-Kendall τ, CVSI (`ndvi_cvsi_k8`, k=8 optimal lag), LISA cluster, breakpoint threshold |
 | Step 3 (LST) | 5 features: Day/Night anomaly, DTR anomaly, monthly Mann-Kendall τ (Day/Night) |
-| Step 4 (FLDAS) | 12 features: air temp/wind/precip/RH/soil moisture/net LW radiation — anomaly + monthly Mann-Kendall τ each |
+| Step 4 (FLDAS) | 14 features: air temp/wind/precip/RH/specific humidity/soil moisture/net LW radiation — anomaly + monthly Mann-Kendall τ each |
 | Step 4 (land cover) | 22 features: ESA CCI/C3S 2020 base-class fractional cover per pixel |
 | Step 5a (Terrain) | 3 features: elevation, slope, aspect (SRTMGL3 90m DEM) |
 | Step 5b (Accessibility) | 3 features: distance to roads, railways, waterways (Geofabrik OSM 2022) |
 | This notebook | 1 feature: LULC forest fraction, 2001 baseline only (`forest_frac_baseline`) — the one input not aligned anywhere else |
 
-**Total: 57 feature layers**, plus `lon`/`lat` = 59 columns in the flattened pixel table.
+**Total: 59 feature layers**, plus `lon`/`lat` = 61 columns in the flattened pixel table
+(57 layers / 59 columns before the 2026-08-22 specific-humidity addition below).
 This is the first run in which the trained feature table genuinely covers all 15 of
 Biswas et al. (2025)'s real predictor variables (see the "Terrain & accessibility wired
 in" note below) — previously only 9 of 15 were present, despite Step 5a/5b's work
 existing separately since 2026-08-18.
+
+**2026-08-22 specific-humidity completeness fix:** Step 4's FLDAS notebook added full
+spatial treatment (anomaly + monthly Mann-Kendall trend) for specific humidity
+(`Qair_f_tavg`), previously only given to relative humidity. The two new GeoTIFFs are
+wired in here as `fldas_qair_anomaly` and `fldas_qair_mk_tau_monthly`, following the
+identical dict pattern as every other FLDAS variable (same warn-and-skip-on-missing-file
+behavior). Purely additive: no existing feature changed or was removed. This raises the
+counts from 57 bands / 59 columns / 55 features to **59 bands / 61 columns / 57
+features**.
 
 **2026-08-21 data-leakage fix:** `forest_frac_recent` (2020), `forest_frac_current`
 (2022), and `forest_loss_baseline_to_recent` were removed from the exported feature set
@@ -114,10 +138,10 @@ reasoning.
 
 ### What it produces
 
-1. `Integrated_FireRisk_Stack.tif` — 57-band GeoTIFF, one band per feature, identical
+1. `Integrated_FireRisk_Stack.tif` — 59-band GeoTIFF, one band per feature, identical
    pixel grid across bands.
 2. `Integrated_FireRisk_Pixels.parquet` — same stack flattened to one row per valid
-   in-India pixel (4,161,009 pixels × 59 columns), `fire_ever` as the label.
+   in-India pixel (4,161,009 pixels × 61 columns), `fire_ever` as the label.
 3. `Integrated_Monthly_TimeSeries.csv` — national-mean NDVI + LST Day/Night + FLDAS
    climatic variables + fire counts, joined on `(year, month)` (266 months × 25 columns).
 
@@ -134,12 +158,16 @@ needed).
 
 **Input:** Step 6's `Integrated_FireRisk_Pixels.parquet` — dynamically picks up every
 feature column present (`feature_cols = [c for c in df.columns if c not in DROP_COLS]`),
-so it automatically retrains on whatever's present without a code change. Currently
-**55 features** (59 columns minus `lon`, `lat`, `fire_count`, `fire_ever`), reflecting
-Step 6's 2026-08-21 data-leakage fix (only `forest_frac_baseline` kept; `forest_frac_recent`,
-`forest_frac_current`, `forest_loss_baseline_to_recent` dropped). Verified directly (not
-assumed): `DROP_COLS` is still exactly `["lon", "lat", "fire_count", "fire_ever"]` and no
-cell hardcodes a column count or name list.
+so it automatically retrains on whatever's present without a code change. As of Step 7's
+last actual run (2026-08-22), it trained on **55 features** (59 columns minus `lon`,
+`lat`, `fire_count`, `fire_ever`), reflecting Step 6's 2026-08-21 data-leakage fix (only
+`forest_frac_baseline` kept; `forest_frac_recent`, `forest_frac_current`,
+`forest_loss_baseline_to_recent` dropped). Verified directly (not assumed): `DROP_COLS`
+is still exactly `["lon", "lat", "fire_count", "fire_ever"]` and no cell hardcodes a
+column count or name list. **Not yet reflected below:** Step 6's 2026-08-22
+specific-humidity addition (`fldas_qair_anomaly`, `fldas_qair_mk_tau_monthly`) brings the
+parquet to 57 features; Step 7 will pick these up automatically the next time it's
+re-run, but that re-run is out of scope for the Step 6 change that added them.
 
 Delivers:
 1. A Random Forest fire-susceptibility classifier evaluated on a held-out test set
@@ -299,7 +327,7 @@ sec would now truncate it mid-fold.
 
 ```
 Integrated_Outputs/
-├── Integrated_FireRisk_Stack.tif              # 57-band GeoTIFF (not tracked, ~large)
+├── Integrated_FireRisk_Stack.tif              # 59-band GeoTIFF (not tracked, ~large)
 ├── Integrated_FireRisk_Pixels.parquet          # ML-ready table (not tracked, ~large)
 ├── Integrated_FireRisk_Pixels_sample200k.csv   # 200k-row sample (tracked)
 ├── Integrated_Monthly_TimeSeries.csv           # monthly join table (tracked)
