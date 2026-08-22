@@ -14,53 +14,53 @@
     },
     {
       "stage": "Step 7: load integrated parquet",
-      "seconds": 4.06
+      "seconds": 0.39
     },
     {
       "stage": "Step 7: train Random Forest (test-split model)",
-      "seconds": 217.51
+      "seconds": 225.35
     },
     {
       "stage": "Step 7: test-set inference (Random Forest)",
-      "seconds": 1.773
+      "seconds": 1.889
     },
     {
       "stage": "Step 7: 5-fold cross-validation (5x refits)",
-      "seconds": 756.38
+      "seconds": 813.69
     },
     {
       "stage": "Step 7: full-grid inference (Random Forest, all valid pixels)",
-      "seconds": 6.929
+      "seconds": 7.024
     },
     {
       "stage": "Step 7: train MaxEnt (150k-row stratified subsample)",
-      "seconds": 1289.93
+      "seconds": 1826.51
     },
     {
       "stage": "Step 7: test-set inference (MaxEnt, full 832,202-row test set)",
-      "seconds": 30.953
+      "seconds": 38.327
     },
     {
       "stage": "Step 7: MaxEnt permutation importance (100k-row sample)",
-      "seconds": 225.68
+      "seconds": 249.33
     },
     {
       "stage": "Step 7: full-grid inference (MaxEnt, all valid pixels)",
-      "seconds": 271.746
+      "seconds": 313.209
     },
     {
       "stage": "Step 7: spatial-block CV (3 folds, RF + MaxEnt refit each)",
-      "seconds": 5189.34
+      "seconds": 5098.55
     }
   ],
   "model_performance": {
     "random_forest": {
-      "roc_auc": 0.9701357605454071,
-      "average_precision": 0.6984224910368168
+      "roc_auc": 0.9704471015873685,
+      "average_precision": 0.7011235367097762
     },
     "maxent": {
-      "roc_auc": 0.9594422627008947,
-      "average_precision": 0.6245943517873778
+      "roc_auc": 0.95978236387969,
+      "average_precision": 0.6274243011452088
     }
   },
   "maxent_comparison": {
@@ -73,11 +73,11 @@
     ],
     "train_rows": 150000,
     "train_rows_pct_of_full_train": 4.51,
-    "train_seconds": 1289.926298379898,
-    "test_inference_seconds": 30.952608346939087,
-    "roc_auc": 0.9594422627008947,
-    "average_precision": 0.6245943517873778,
-    "roc_auc_vs_random_forest": 0.010693497844512345,
+    "train_seconds": 1826.5057356357574,
+    "test_inference_seconds": 38.3273401260376,
+    "roc_auc": 0.95978236387969,
+    "average_precision": 0.6274243011452088,
+    "roc_auc_vs_random_forest": 0.010664737707678507,
     "note": "training size recalibrated from an original 450,000-row target to 150,000 rows after a direct timing probe showed super-linear fit-time scaling with sample size on this data/library combination (450k did not finish within a 7200 sec cell timeout)"
   },
   "reproducibility": {
@@ -85,14 +85,14 @@
     "exact_bit_for_bit_match": false,
     "match_within_1e-9": true,
     "max_abs_prediction_diff": 7.771561172376096e-16,
-    "cv_auc_mean": 0.9698480935002879,
-    "cv_auc_std": 0.0001836607212994317,
+    "cv_auc_mean": 0.9700331321770633,
+    "cv_auc_std": 0.00015675932159261443,
     "cv_scores": [
-      0.9697846962531154,
-      0.9698877201531146,
-      0.9701452052250632,
-      0.9695746132928935,
-      0.9698482325772524
+      0.9700498190409734,
+      0.9700564737972477,
+      0.9702605323158088,
+      0.9697679372879666,
+      0.9700308984433206
     ]
   },
   "spatial_block_cv": {
@@ -103,92 +103,92 @@
       {
         "model": "Random Forest",
         "fold": 0,
-        "roc_auc": 0.9458572360355584,
-        "average_precision": 0.42334226567231514,
+        "roc_auc": 0.9458577378629925,
+        "average_precision": 0.4214906217031467,
         "n_train_pixels": 2773877,
         "n_test_pixels": 1387132,
         "n_test_fire_pixels": 69369,
-        "train_seconds": 114.17
+        "train_seconds": 114.34
       },
       {
         "model": "MaxEnt",
         "fold": 0,
-        "roc_auc": 0.9406946555836316,
-        "average_precision": 0.4123052418183965,
+        "roc_auc": 0.9427341383024561,
+        "average_precision": 0.4206337534745807,
         "n_train_pixels": 150000,
         "n_test_pixels": 1387132,
         "n_test_fire_pixels": 69369,
-        "train_seconds": 1863.33
+        "train_seconds": 1651.65
       },
       {
         "model": "Random Forest",
         "fold": 1,
-        "roc_auc": 0.9520008440461143,
-        "average_precision": 0.5743355039926146,
+        "roc_auc": 0.9526675142567874,
+        "average_precision": 0.5846870211401594,
         "n_train_pixels": 2774068,
         "n_test_pixels": 1386941,
         "n_test_fire_pixels": 124970,
-        "train_seconds": 116.67
+        "train_seconds": 118.83
       },
       {
         "model": "MaxEnt",
         "fold": 1,
-        "roc_auc": 0.9506711952548411,
-        "average_precision": 0.5889949830331076,
+        "roc_auc": 0.9522570824063388,
+        "average_precision": 0.5995248493499135,
         "n_train_pixels": 150000,
         "n_test_pixels": 1386941,
         "n_test_fire_pixels": 124970,
-        "train_seconds": 1132.62
+        "train_seconds": 1263.7
       },
       {
         "model": "Random Forest",
         "fold": 2,
-        "roc_auc": 0.9512022022969009,
-        "average_precision": 0.556153198394267,
+        "roc_auc": 0.9508028028538719,
+        "average_precision": 0.5557885601273672,
         "n_train_pixels": 2774073,
         "n_test_pixels": 1386936,
         "n_test_fire_pixels": 75735,
-        "train_seconds": 114.84
+        "train_seconds": 114.46
       },
       {
         "model": "MaxEnt",
         "fold": 2,
-        "roc_auc": 0.9450289923668656,
-        "average_precision": 0.5526415937771658,
+        "roc_auc": 0.9428704035887593,
+        "average_precision": 0.5245750206333846,
         "n_train_pixels": 150000,
         "n_test_pixels": 1386936,
         "n_test_fire_pixels": 75735,
-        "train_seconds": 1674.52
+        "train_seconds": 1647.86
       }
     ],
     "summary": [
       {
         "model": "MaxEnt",
-        "mean_auc": 0.9454649477351128,
-        "std_auc": 0.005002537232758178,
+        "mean_auc": 0.9459538747658515,
+        "std_auc": 0.005459163120514592,
         "n_folds": 3
       },
       {
         "model": "Random Forest",
-        "mean_auc": 0.9496867607928579,
-        "std_auc": 0.003340419443868368,
+        "mean_auc": 0.9497760183245506,
+        "std_auc": 0.003519087734855667,
         "n_folds": 3
       }
     ],
-    "wall_seconds": 5189.340485334396
+    "wall_seconds": 5098.548819303513
   },
   "memory_gb": {
     "lst_naive_dense_stack_estimate": 217.0,
     "lst_streaming_accumulators_actual": 37.2,
-    "step5_process_resident": 5.221203968
+    "step5_process_resident": 5.374636032
   },
   "storage_mb": {
-    "parquet": 551.00229,
-    "equivalent_csv_estimate": 2058.2455776503552
+    "parquet": 587.259243,
+    "equivalent_csv_estimate": 2160.52998212007
   },
   "dataset": {
     "n_pixels": 4161009,
-    "n_features": 55,
+    "n_features": 57,
     "n_fire_pixels": 270074,
     "fire_rate_pct": 6.4905891816143635
   },
@@ -199,5 +199,5 @@
     "elapid": "1.0.4",
     "cpu_cores": 24
   },
-  "notebook_total_seconds": 8241.194905281067
+  "notebook_total_seconds": 8823.724749803543
 }
