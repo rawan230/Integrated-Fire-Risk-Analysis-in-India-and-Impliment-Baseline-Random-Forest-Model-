@@ -47,8 +47,10 @@
 > (`max_depth=25, min_samples_leaf=3`) scored 0.9694 and confirmed on the untouched test
 > split at ROC-AUC 0.9698 / AP 0.6961 (`Model_Outputs/rf_hp_search_result.json`).
 > `n_estimators=200`, `class_weight="balanced"`, `n_jobs=-1`, `random_state=42` are
-> unchanged. MaxEnt was deliberately left untuned in this pass — a separate, still-open
-> item, not an oversight.
+> unchanged. MaxEnt was deliberately left untuned in this pass — closed 2026-08-23 by
+> `hp_search_maxent.py` (see below): the search found `beta_multiplier` barely matters
+> for this feature set (validation AUC 0.9589-0.9592 across {0.5,1.0,1.5,2.5,4.0}), a
+> genuine near-null tuning result; winner `beta_multiplier=4.0` is now used throughout.
 >
 > **Step 7 retrained again 2026-08-22**, this time on both fixes together: the corrected
 > 55-feature (leak-fixed) table *and* the tuned RF hyperparameters. Every RF instantiation
@@ -191,7 +193,12 @@ min_samples_leaf=3`, selected by `hp_search_rf.py`'s validation-set search (see 
 project-level note above). `n_estimators=200`, `class_weight="balanced"`, `n_jobs=-1`,
 `random_state=42` unchanged.
 
-| Metric | Current (55 features, tuned RF, 2026-08-22) | Prior (58 features, untuned RF, 2026-08-20) |
+*(Table below is the 2026-08-22 leak-fix + RF-tuning snapshot, 55 features. Since
+superseded by specific humidity's addition, 57 features, RF 0.9704/0.7011 — the
+"Current results" section near the top of this README has the up-to-date numbers;
+this table is kept for the specific 55→58-feature RF-tuning comparison it documents.)*
+
+| Metric | Then-current (55 features, tuned RF, 2026-08-22) | Prior (58 features, untuned RF, 2026-08-20) |
 |---|---|---|
 | ROC-AUC (held-out test) | **0.9701** | 0.9683 |
 | Average Precision | **0.6984** (no-skill baseline = 0.0649) | 0.6796 |
@@ -266,31 +273,38 @@ fit time scales *super-linearly* with sample size here (20k → 356 rows/sec, 40
 silent downgrade — still a large stratified presence/background sample by the standards of
 the literature this method comes from.
 
-| Metric | Random Forest (headline, tuned) | MaxEnt (elapid, untuned) |
+| Metric | Random Forest (headline, tuned) | MaxEnt (elapid, tuned) |
 |---|---|---|
-| ROC-AUC (held-out test, 832,202 px) | **0.9701** | 0.9594 |
-| Average Precision | **0.6984** | 0.6246 |
-| Spatial-block CV AUC (2°×2° `GroupKFold`, n=3) | **0.9497 ± 0.0033** | 0.9455 ± 0.0050 |
+| ROC-AUC (held-out test, 832,202 px) | **0.9704** | 0.9598 |
+| Average Precision | **0.7011** | 0.6275 |
+| Spatial-block CV AUC (2°×2° `GroupKFold`, n=3) | **0.9498 ± 0.0035** | 0.9465 ± 0.0054 |
 | Training rows | 3,328,807 (100% of train split) | 150,000 (4.51% of train split, stratified) |
-| Training time | 217.5 sec | 1,289.9 sec (21.5 min) |
-| Test-set inference time | 1.8 sec | 31.0 sec |
+| Training time | 216.0 sec | 1,232.2 sec (20.5 min) |
+| Test-set inference time | 1.9 sec | 34.0 sec |
 
 (Prior 58-feature/untuned-RF-era numbers, 2026-08-20: Random Forest ROC-AUC 0.9683 / AP
 0.6796; MaxEnt ROC-AUC 0.9595 / AP 0.6237 — superseded by the 2026-08-22 leak-fix +
-RF-tuning retrain above, both models retrained on the corrected 55-feature table.)
+RF-tuning retrain, then the 2026-08-22 specific-humidity feature addition (57 features)
+and 2026-08-23 validated MaxEnt `beta_multiplier` tuning above.)
 
-Random Forest outperforms MaxEnt on this feature set by 0.0107 ROC-AUC (0.9701 vs. 0.9594)
-and 0.0738 Average Precision on the random split, and by 0.0042 AUC (0.9497 vs. 0.9455) on
+**2026-08-23: MaxEnt hyperparameters validated-tuned** (`hp_search_maxent.py`, closing
+the last "untuned" item in the project's rigor audit) — searched `beta_multiplier` over
+{0.5, 1.0, 1.5, 2.5, 4.0} by validation AUC (65/15/20 split). The grid was essentially
+flat (validation AUC 0.9589–0.9592 across the whole range), a genuine near-null tuning
+result, not a large correction; winner `beta_multiplier=4.0` is used above.
+
+Random Forest outperforms MaxEnt on this feature set by 0.0106 ROC-AUC (0.9704 vs. 0.9598)
+and 0.0736 Average Precision on the random split, and by 0.0033 AUC (0.9498 vs. 0.9465) on
 the spatial-block split — a modest but consistent RF advantage on both evaluation
 protocols, plausible given RF trains on the full 3.3M-row training set with a more
 flexible (non-linear, non-additive) decision boundary, while MaxEnt here is a
 linear/hinge/product-feature exponential-family model trained on a 4.5%-of-training-set
-stratified subsample and was not hyperparameter-tuned in this pass. Both models show the
+stratified subsample. Both models show the
 same qualitative pattern of AUC dropping under spatial-block evaluation versus the random
-split (RF: 0.9701 → 0.9497, a 2.1% drop; MaxEnt: 0.9594 → 0.9455, a 1.5% drop) — expected,
+split (RF: 0.9704 → 0.9498, a 2.1% drop; MaxEnt: 0.9598 → 0.9465, a 1.4% drop) — expected,
 since neighboring pixels are spatially autocorrelated and a random split alone overstates
 generalization to genuinely new geography; both remain far above CDR-PINN's own Track B1
-spatial-block AUC of 0.7540 on the same protocol. This is reported as a straightforward
+spatial-block AUC of 0.7510 on the same protocol. This is reported as a straightforward
 measured result, not tuned in either model's favor. Outputs:
 `ROC_PR_Curves_RF_vs_MaxEnt.png`, `RF_vs_MaxEnt_Comparison.csv`,
 `MaxEnt_Feature_Importance.png` (permutation importance), `MaxEnt_Susceptibility_Probability.tif`,
