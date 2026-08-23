@@ -1,0 +1,34 @@
+{
+  "grid_results": [
+    {
+      "beta_multiplier": 0.5,
+      "val_auc": 0.9589108024630538,
+      "val_ap": 0.6248169102013819
+    },
+    {
+      "beta_multiplier": 1.0,
+      "val_auc": 0.9591210624281759,
+      "val_ap": 0.6257175847865252
+    },
+    {
+      "beta_multiplier": 1.5,
+      "val_auc": 0.9591734789508072,
+      "val_ap": 0.6260793880926845
+    },
+    {
+      "beta_multiplier": 2.5,
+      "val_auc": 0.9592012024879223,
+      "val_ap": 0.6260865251790484
+    },
+    {
+      "beta_multiplier": 4.0,
+      "val_auc": 0.9592200206340826,
+      "val_ap": 0.626155718920401
+    }
+  ],
+  "winner_beta_multiplier": 4.0,
+  "winner_val_auc": 0.9592200206340826,
+  "test_auc": 0.9595737437908409,
+  "test_ap": 0.6291033546381726,
+  "maxent_train_size": 150000
+}
