@@ -538,7 +538,7 @@ was retrained on the expanded table the same day** (2026-08-20) — see the Step
 
 ---
 
-## Step 5 — Integrated Alignment (60 features assembled)
+## Step 5 — Integrated Alignment (59 bands / 57 trainable features, current)
 
 > **Renumbered 2026-08-17**: was "Step 4" before — moved to Step 5, after FLDAS
 > (now Step 4), since it depends on FLDAS's output and always ran after it. (This
@@ -551,6 +551,15 @@ was retrained on the expanded table the same day** (2026-08-20) — see the Step
 > (elevation, slope, aspect, distance to roads/railways/waterways) are now wired in —
 > 54 → 60 feature layers, 56 → 62 columns in the flattened pixel table. This closes
 > the pipeline's last gap against Biswas et al.'s real 15-variable predictor set.
+>
+> **Superseded 2026-08-21/22 (heading count corrected here)**: the 2026-08-21
+> data-leakage fix dropped `forest_frac_recent`/`forest_frac_current`/
+> `forest_loss_baseline_to_recent` (60→57 bands, 58→55 trainable features), and the
+> 2026-08-22 specific-humidity completeness fix added `fldas_qair_anomaly`/
+> `fldas_qair_mk_tau_monthly` (57→59 bands, 55→57 trainable features). **59 bands /
+> 57 trainable features is the current, correct count** (see the "Result
+> (current...)" callout below for the full arithmetic) — the "60 feature layers" in
+> the 2026-08-20 update note directly above is historical, not current.
 
 ```
 forest_frac(i,j) = (1/N_sub) Σ_{sub-pixel ∈ cell(i,j)} 1[LULC_sub ∈ ForestCodes]
@@ -575,13 +584,26 @@ than snapping to a majority class) is a deliberate choice here.
 **Forest-class reconciliation (2026-08-10)**: now uses the same 13-code set as
 Step 1 (previously 11 codes — an undocumented divergence, omitted mosaic-tree/shrub
 and mosaic-herbaceous). National mean forest fraction rose ~7.8–8.0% → **10.2–10.7%**;
-these three features became the **top 3** Step 6 predictors by Gini importance
-after the fix.
+these three features (baseline/recent/current) became the **top 3** Step 6
+predictors by Gini importance after the fix. **Superseded 2026-08-21**: `recent`
+(2020) and `current` (2022) were subsequently dropped for data leakage (both years
+overlap the pooled fire label's own time window — see the leakage-fix note below);
+only `forest_frac_baseline` (2001) survives as an exported feature, and it alone now
+carries the combined importance the three used to share (see Step 6/7's own
+`README.md` for the current top-5 ranking).
 
-**Result**: `Integrated_FireRisk_Pixels.parquet`, **4,161,009 pixels × 62 columns**
-(60 features + lon + lat), following the 2026-08-20 addition of Step 5a/5b's 6
-terrain/accessibility bands (`terrain_elevation`, `terrain_slope`, `terrain_aspect`,
-`access_dist_roads`, `access_dist_railways`, `access_dist_waterways`).
+**Result (current, as of the 2026-08-22 specific-humidity addition)**:
+`Integrated_FireRisk_Pixels.parquet`, **4,161,009 pixels × 61 columns** (57
+trainable features + lon + lat, plus `fire_count`/`fire_ever` as the label columns
+— 59 GeoTIFF bands total). This reflects two changes after the figure immediately
+above was first written (58 trainable features / 60 bands / 62 columns, 2026-08-20,
+Step 5a/5b terrain/accessibility wiring): the **2026-08-21 data-leakage fix**
+(`forest_frac_recent`/`forest_frac_current`/`forest_loss_baseline_to_recent`
+dropped, only `forest_frac_baseline` kept — 58→55 trainable features, 60→57 bands)
+followed by the **2026-08-22 specific-humidity completeness fix**
+(`fldas_qair_anomaly`/`fldas_qair_mk_tau_monthly` added — 55→57 trainable features,
+57→59 bands). See `Integrated_Analysis/README.md`'s banner notes for the full,
+dated trail of both fixes.
 
 ---
 
@@ -627,20 +649,36 @@ specifically *because* it's the established comparison point in the literature t
 project extends. **[STANDARD]**: Breiman (2001), *Machine Learning*, 45(1):5–32;
 Davis & Goadrich (2006), *ICML '06*, 233–240 [both cite-confirmed].
 
-**Current result (retrained 2026-08-20 on the 58-feature table, after terrain +
-accessibility were wired into Step 6)**: Random Forest ROC-AUC 0.9683, AP 0.6796,
-5-fold CV 0.9679±0.0002 (up from 0.9674 / 0.6761 / 0.9670±0.0002 on the prior
-52-feature table). MaxEnt (`elapid`, trained on a 150,000-row stratified subsample of
-the training portion — recalibrated down from an original 450k-row target after a
-direct timing probe showed super-linear fit-time scaling on this data/library
-combination — evaluated on the full 832,202-row test set): ROC-AUC 0.9595, AP 0.6237
-(up from 0.9576 / 0.6111). Random Forest still outperforms MaxEnt by 0.0088 ROC-AUC /
-0.0559 AP. Top 5 features by Gini importance unchanged in kind (forest-fraction + NDVI
-variables dominate); of the 6 new terrain/accessibility features, `terrain_slope` is
-the strongest, ranking 6th overall (just outside the top 5) — a real, testable signal
-directly consistent with Step 5a's fire-coincidence finding (fires sit at +115% mean
-slope vs. the national average). See `Integrated_Analysis/README.md` for the full
-results table, per-fold AUCs, and complete feature-importance ranking.
+**Current result (final, validation-tuned, as of 2026-08-23 — supersedes the
+2026-08-20 untuned 58-feature numbers below)**: on the current 57-trainable-feature
+table (leakage fix + specific-humidity addition both applied), with hyperparameters
+selected by a genuine validation-set search rather than literature defaults
+(`hp_search_rf.py`/`hp_search_maxent.py`, 65/15/20 split): **Random Forest
+ROC-AUC 0.9704, AP 0.7011** (`max_depth=25, min_samples_leaf=3`; 5-fold CV
+0.9698±0.0002; spatial-block CV 0.9498±0.0035) and **MaxEnt (`elapid`) ROC-AUC
+0.9598, AP 0.6275** (`beta_multiplier=4.0`; spatial-block CV 0.9465±0.0054), trained
+on a 150,000-row stratified subsample of the training portion (recalibrated down
+from an original 450k-row target after a direct timing probe showed super-linear
+fit-time scaling on this data/library combination) and evaluated on the full
+832,202-row test set. Random Forest outperforms MaxEnt by 0.0106 ROC-AUC / 0.0736 AP
+on the random split and 0.0033 AUC on the spatial-block split. Top feature by Gini
+importance is `forest_frac_baseline` alone (≈0.21 importance, now carrying
+essentially the combined importance the pre-leakage-fix
+baseline/recent/current trio used to share); of the 6 terrain/accessibility
+features, `terrain_slope` remains the strongest, a real, testable signal directly
+consistent with Step 5a's fire-coincidence finding (fires sit at +115% mean slope
+vs. the national average). See `Integrated_Analysis/README.md`'s "Current Headline
+Results" section for the full results table, per-fold AUCs, complete
+feature-importance ranking, and the full "Comparison against Biswas et al. (2025)"
+discussion (0.25° single-random-split MaxEnt vs. this project's ~1km RF+MaxEnt with
+random-split/5-fold/spatial-block validation).
+
+*(Historical, superseded record — kept for the specific pre-tuning/pre-leak-fix
+comparison it documents: retrained 2026-08-20 on the 58-feature table, after
+terrain + accessibility were wired into Step 6, before any tuning or leakage fix:
+Random Forest ROC-AUC 0.9683, AP 0.6796, 5-fold CV 0.9679±0.0002 (up from 0.9674 /
+0.6761 / 0.9670±0.0002 on the prior 52-feature table); untuned MaxEnt ROC-AUC
+0.9595, AP 0.6237 (up from 0.9576 / 0.6111). These are not current-state numbers.)*
 
 ---
 

@@ -66,13 +66,54 @@
 > `fldas_qair_mk_tau_monthly`, following the exact existing FLDAS dict pattern (same
 > warn-and-skip-on-missing-file behavior). Purely additive — no existing feature was
 > changed or removed — bringing the counts to 59 bands, 61 columns, 57 features (up from
-> 57/59/55). **Downstream impact (flagged, not fixed here):** Step 7
+> 57/59/55). **Downstream impact, since resolved**: Step 7
 > (`Step7_FireRisk_Susceptibility_Model.ipynb`) picks up new columns automatically via its
-> `feature_cols = [c for c in df.columns if c not in DROP_COLS]` pattern, but has not been
-> re-run against this expanded table as part of this fix — its results below still reflect
-> the 55-feature run.
+> `feature_cols = [c for c in df.columns if c not in DROP_COLS]` pattern. At the time this
+> note was first written, Step 7 had not yet been re-run against this expanded table; it
+> has since been retrained on the full 57-feature table (RF ROC-AUC 0.9704, MaxEnt
+> ROC-AUC 0.9598 with `beta_multiplier` validated-tuned 2026-08-23) — see "Current
+> Headline Results" directly below and the Step 7 section's MaxEnt subsection for the
+> up-to-date numbers. Any "still reflects the 55-feature run" language elsewhere in this
+> document refers to a specific, explicitly-labeled historical table (kept for the
+> before/after comparison it documents), not the current state.
+
+## Current Headline Results (as of 2026-08-23 — final, validated numbers)
+
+Both models below are trained on Step 6's 57-feature, leakage-fixed table
+(4,161,009 pixels), both tuned via a genuine validation split rather than
+literature defaults:
+
+| Metric | Random Forest (`max_depth=25, min_samples_leaf=3`) | MaxEnt (`beta_multiplier=4.0`) |
+|---|---|---|
+| ROC-AUC (80/20 random split, held-out test) | **0.9704** | 0.9598 |
+| Average Precision | **0.7011** | 0.6275 |
+| Spatial-block CV AUC (2°×2° `GroupKFold`, n=3) | **0.9498 ± 0.0035** | 0.9465 ± 0.0054 |
+| 5-fold `StratifiedKFold` CV AUC | **0.9698 ± 0.0002** | not run |
+
+These are the numbers to cite as "current" anywhere in this document or a paper
+draft. Any earlier RF/MaxEnt number elsewhere in this README (0.9674, 0.9683,
+0.9687, or a 0.9701/0.6984 pair without spatial-block CV; an untuned MaxEnt
+0.9594/0.9595) is a superseded intermediate result from this project's own
+leak-fix/tuning history, kept in place only where the surrounding text is
+documenting *that specific historical comparison* (e.g. "tuned vs. untuned"),
+not presented as current. See `FULL_EXPERIMENT_LOG.md` (project root) Section B
+for the complete, dated ledger of every run.
 
 ## Step 6 — Integrated Multi-Factor Fire-Risk Feature Alignment
+
+### Why this step, and how
+
+Steps 1–5 each produce a scientifically valid feature set on their own, but each
+lives on a different native grid, resolution, and file format (fire points as
+lon/lat CSV rows; NDVI/LST/FLDAS as monthly GeoTIFF stacks; terrain/accessibility
+as static single-epoch rasters) — no model can train directly on five separate
+files with five different pixel definitions. Step 6 exists purely to solve that
+alignment problem: reproject/resample everything onto one shared grid (the NDVI
+grid established in Step 2) and flatten it into one row-per-pixel table a
+classical ML model or neural operator can actually consume. This is necessary
+preprocessing regardless of which model architecture comes next — Step 7's Random
+Forest/MaxEnt and Step 8's CDR-PINN both read this exact parquet file directly,
+and neither performs its own alignment.
 
 Combines every other step's per-pixel feature rasters — already on (or reprojected onto)
 the **NDVI grid** (3641×3504, EPSG:4326, ~0.01°/1km, established in Step 2) — into one
@@ -158,18 +199,44 @@ needed).
 
 ## Step 7 — Fire Susceptibility Model + Reproducibility Report
 
+### Why this step, and how
+
+With one aligned feature table in hand, Step 7 asks the actual scientific
+question: can these features predict fire occurrence, and how well? Random
+Forest is chosen as the primary baseline because it is a stronger, more modern
+classical method than Biswas et al.'s own MaxEnt (native handling of confirmed
+non-fire pixels as true negatives, a non-linear/non-additive decision boundary,
+straightforward bit-exact reproducibility) — while a real, separately-trained
+MaxEnt replication is kept alongside it specifically because it is the
+literature-comparable baseline, the actual method Biswas et al. used. Both
+models' hyperparameters are chosen via a genuine 65/15/20 train/validation/test
+split (`hp_search_rf.py`, `hp_search_maxent.py`) rather than literature
+defaults, because an untuned default configuration is not a fair representation
+of either method's real ceiling on this data. Spatial-block cross-validation is
+added on top of the standard random-split and 5-fold CV specifically because
+random splits of spatially autocorrelated data systematically overstate
+generalization (Roberts et al. 2017, cited in full below) — a model can score
+well on a random held-out pixel sitting meters from a training pixel without
+demonstrating it can generalize to genuinely new geography, the more
+policy-relevant question for a national risk map. Step 7's outputs — the tuned
+RF as the primary baseline, the tuned MaxEnt as the literature-comparable one,
+and all three validation protocols — are what Step 8's CDR-PINN is benchmarked
+against.
+
 **Input:** Step 6's `Integrated_FireRisk_Pixels.parquet` — dynamically picks up every
 feature column present (`feature_cols = [c for c in df.columns if c not in DROP_COLS]`),
 so it automatically retrains on whatever's present without a code change. As of Step 7's
-last actual run (2026-08-22), it trained on **55 features** (59 columns minus `lon`,
-`lat`, `fire_count`, `fire_ever`), reflecting Step 6's 2026-08-21 data-leakage fix (only
+current run (2026-08-23), it trains on **57 features** (61 columns minus `lon`, `lat`,
+`fire_count`, `fire_ever`), reflecting both Step 6's 2026-08-21 data-leakage fix (only
 `forest_frac_baseline` kept; `forest_frac_recent`, `forest_frac_current`,
-`forest_loss_baseline_to_recent` dropped). Verified directly (not assumed): `DROP_COLS`
-is still exactly `["lon", "lat", "fire_count", "fire_ever"]` and no cell hardcodes a
-column count or name list. **Not yet reflected below:** Step 6's 2026-08-22
-specific-humidity addition (`fldas_qair_anomaly`, `fldas_qair_mk_tau_monthly`) brings the
-parquet to 57 features; Step 7 will pick these up automatically the next time it's
-re-run, but that re-run is out of scope for the Step 6 change that added them.
+`forest_loss_baseline_to_recent` dropped) and the 2026-08-22 specific-humidity addition
+(`fldas_qair_anomaly`, `fldas_qair_mk_tau_monthly`). Verified directly (not assumed):
+`DROP_COLS` is still exactly `["lon", "lat", "fire_count", "fire_ever"]` and no cell
+hardcodes a column count or name list. (An earlier version of this note, written
+immediately after the specific-humidity fix landed in Step 6 but before Step 7 was
+re-run against it, said Step 7 still reflected a 55-feature run — that has since been
+resolved; see "Current Headline Results" above and the MaxEnt subsection below for the
+57-feature numbers.)
 
 Delivers:
 1. A Random Forest fire-susceptibility classifier evaluated on a held-out test set
@@ -194,9 +261,10 @@ project-level note above). `n_estimators=200`, `class_weight="balanced"`, `n_job
 `random_state=42` unchanged.
 
 *(Table below is the 2026-08-22 leak-fix + RF-tuning snapshot, 55 features. Since
-superseded by specific humidity's addition, 57 features, RF 0.9704/0.7011 — the
-"Current results" section near the top of this README has the up-to-date numbers;
-this table is kept for the specific 55→58-feature RF-tuning comparison it documents.)*
+superseded by specific humidity's addition, 57 features, RF 0.9704/0.7011 — see
+the "Current Headline Results" section near the top of this README for the
+up-to-date numbers; this table is kept for the specific 55→58-feature RF-tuning
+comparison it documents.)*
 
 | Metric | Then-current (55 features, tuned RF, 2026-08-22) | Prior (58 features, untuned RF, 2026-08-20) |
 |---|---|---|
@@ -310,6 +378,41 @@ measured result, not tuned in either model's favor. Outputs:
 `MaxEnt_Feature_Importance.png` (permutation importance), `MaxEnt_Susceptibility_Probability.tif`,
 `Fire_Susceptibility_Map_RF_vs_MaxEnt.png`.
 
+### Comparison against Biswas et al. (2025) — validation-regime rigor, not just accuracy
+
+Biswas et al. (2025) train a single MaxEnt model at their 0.25° (~27km, ~730 km²/pixel)
+common working grid, evaluated with one random train/test split and no spatial
+cross-validation. Per Roberts et al. (2017, *Ecography*, 40(8):913–929,
+"Cross-validation strategies for data with temporal, spatial, hierarchical, or
+phylogenetic structure," DOI: 10.1111/ecog.02881), that kind of random-split-only
+protocol tends to overstate real-world generalization whenever the underlying data
+is spatially autocorrelated — true of essentially every variable both this project
+and Biswas et al. use (climate, vegetation, terrain). This project trains **both** a
+Random Forest and a direct MaxEnt replication of their method, at ~1km native
+resolution rather than 0.25°, and evaluates each with three independent protocols:
+an 80/20 random split, 5-fold `StratifiedKFold` CV, and 2°×2° spatial-block
+`GroupKFold` CV (matching CDR-PINN's own Track B1 exactly, so the same
+spatial-generalization check applies consistently across every model in this
+study) — a substantially more rigorous validation regime than the reference paper's
+own.
+
+The honest, disclosed numbers: this project's own MaxEnt replication (0.9598 AUC
+random-split, 0.9465 spatial-block) already exceeds the informal ≥0.7 "useful
+model" threshold commonly cited in the species-distribution-modeling literature
+MaxEnt comes from. Random Forest is a modest, consistent improvement over that same
+MaxEnt on identical data and identical splits (+0.0106 AUC / +0.0736 AP on the
+random split, +0.0033 AUC on the spatial-block split) — a genuine RF-vs-MaxEnt
+model-class comparison Biswas et al. themselves never report, since they only ever
+trained MaxEnt. No numeric AUC is cited *from* Biswas et al.'s own paper anywhere in
+this comparison (a deliberate choice, not an oversight — their MaxEnt was fit on a
+different 15-variable table at a different resolution, making a cross-paper AUC
+citation a weaker comparison than training MaxEnt fresh, here, on this project's own
+data). Both classical models also comfortably outperform this project's own
+CDR-PINN on the spatial-block protocol (0.7510) — disclosed as an honest,
+unfavorable-to-the-PINN result, not smoothed over (see the
+`integrated-fire-risk-model` skill and `Physics_Informed_FireRisk_Model/README.md`
+for the full three-way comparison).
+
 This model is **not a preprocessing dependency for a PINN** — nothing downstream reads its
 outputs. It's kept deliberately as a standalone classical-ML baseline (now with two
 reference points — Random Forest and MaxEnt) to compare a future PINN against (decision
@@ -343,7 +446,7 @@ sec would now truncate it mid-fold.
 Integrated_Outputs/
 ├── Integrated_FireRisk_Stack.tif              # 59-band GeoTIFF (not tracked, ~large)
 ├── Integrated_FireRisk_Pixels.parquet          # ML-ready table (not tracked, ~large)
-├── Integrated_FireRisk_Pixels_sample200k.csv   # 200k-row sample (tracked)
+├── Integrated_FireRisk_Pixels_sample200k.csv   # 200k-row sample (gitignored — 104MB, exceeds GitHub's 100MB limit; kept locally only, not tracked)
 ├── Integrated_Monthly_TimeSeries.csv           # monthly join table (tracked)
 ├── Feature_Correlation_Matrix.png              # tracked
 └── Fire_vs_NoFire_Feature_Distributions.png    # tracked
@@ -360,6 +463,7 @@ Model_Outputs/
 ├── RF_vs_MaxEnt_Comparison.csv                 # tracked -- AUC/AP/timing/sample-size table
 ├── Model_Comparison_SpatialBlockCV.csv         # tracked -- per-fold RF/MaxEnt AUC/AP, 2deg x 2deg GroupKFold
 ├── rf_hp_search_result.json                    # tracked -- hp_search_rf.py's validation-set search results
+├── maxent_hp_search_result.json                # tracked -- hp_search_maxent.py's validation-set search results
 ├── Computational_Cost_Dashboard.png             # tracked
 └── Computational_Cost_Reproducibility_Report.json  # tracked
 ```
@@ -370,6 +474,10 @@ Model_Outputs/
   in India: a machine learning approach for improved risk assessment and early
   warning systems. *Environmental Science and Pollution Research*, 32(8), 4856–4878.
   DOI: 10.1007/s11356-025-35982-8. (Verified via Crossref, see `METHODOLOGY.md`.)
+- Roberts, D.R., Bahn, V., Ciuti, S., et al. (2017). Cross-validation strategies for
+  data with temporal, spatial, hierarchical, or phylogenetic structure. *Ecography*,
+  40(8), 913–929. DOI: 10.1111/ecog.02881. (Motivates this step's spatial-block CV,
+  see the "Comparison against Biswas et al." subsection above.)
 
 ## License
 
