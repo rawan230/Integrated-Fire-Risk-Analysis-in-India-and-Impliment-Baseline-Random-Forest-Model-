@@ -1,0 +1,554 @@
+{
+ "version": "v2",
+ "created": "2026-09-25T19:13:20",
+ "notebook": "Integrated_Analysis/Step6_Integrated_FireRisk_Analysis.ipynb",
+ "audit_reference": {
+  "methodology": "results/FULL_METHODOLOGY_AUDIT.md",
+  "step_audit": "Integrated_Analysis/AUDIT_2026-09-25.md",
+  "reference_builder": "results/code/build_v2_table.py",
+  "reference_table": "results/recalculated/FEATURE_TABLE_v2.parquet"
+ },
+ "grid": {
+  "crs": "EPSG:4326",
+  "shape": [
+   3641,
+   3504
+  ],
+  "transform": [
+   0.008333333332583237,
+   0.0,
+   68.19999999386121,
+   0.0,
+   -0.008333333332583237,
+   37.091666663327985
+  ]
+ },
+ "population": "India_State_Boundary mask (rasterize, pixel-centre rule) AND isfinite(ndvi_mean)",
+ "primary_evaluation_population": "forest_frac_baseline > 0",
+ "row_order": "ascending grid_index = row*W + col (row-major); Step 7 split: train_test_split(test_size=0.20, stratify=fire_ever, random_state=42) then train_test_split(test_size=0.15/0.80, stratify, random_state=42) -> 65/15/20",
+ "id_columns": [
+  "lon",
+  "lat",
+  "grid_index"
+ ],
+ "label_columns": [
+  "fire_count",
+  "fire_ever"
+ ],
+ "label": {
+  "definition": "fire_ever = fire_count > 0 (pooled 2000-11-01 .. 2022-12-15)",
+  "file": "NDVI_DATA_INDIA_\\NDVI_Fire_Susceptibility_Outputs\\F10_fire_count_Step1.tif",
+  "points": "Forest fire Extraction in INDIA(2000-2022)\\Forest_Fire_Outputs\\all_forest_fires_2000_2022.csv",
+  "rule": "containing pixel: col=floor((lon-c)/a), row=floor((lat-f)/e)"
+ },
+ "cvsi_k_star": 8,
+ "n_features": 55,
+ "complete": true,
+ "missing_features": [],
+ "counts": {
+  "n_rows": 4160768,
+  "n_fire_pixels": 268411,
+  "prevalence_all": 0.06450996546791361,
+  "n_forest": 1197538,
+  "prevalence_forest": 0.22324218521666953
+ },
+ "features": [
+  {
+   "name": "ndvi_mean",
+   "group": "vegetation",
+   "file": "NDVI_DATA_INDIA_\\NDVI_Fire_Susceptibility_Outputs\\F1_NDVI_QA_mean.tif",
+   "band": 1,
+   "step": "Step 2 (NDVI)",
+   "nan_pct_in_population": 0.0
+  },
+  {
+   "name": "ndvi_clim_june",
+   "group": "vegetation",
+   "file": "NDVI_DATA_INDIA_\\NDVI_Fire_Susceptibility_Outputs\\F2_NDVI_climatological_June.tif",
+   "band": 1,
+   "step": "Step 2 (NDVI)",
+   "nan_pct_in_population": 0.13707
+  },
+  {
+   "name": "ndvi_sk_tau",
+   "group": "vegetation",
+   "file": "NDVI_DATA_INDIA_\\NDVI_Fire_Susceptibility_Outputs\\F6_NDVI_SeasonalKendall_tau.tif",
+   "band": 1,
+   "step": "Step 2 (NDVI)",
+   "nan_pct_in_population": 0.04153
+  },
+  {
+   "name": "ndvi_sen_slope",
+   "group": "vegetation",
+   "file": "NDVI_DATA_INDIA_\\NDVI_Fire_Susceptibility_Outputs\\F6_NDVI_Sen_slope.tif",
+   "band": 1,
+   "step": "Step 2 (NDVI)",
+   "nan_pct_in_population": 0.04153
+  },
+  {
+   "name": "ndvi_cvsi",
+   "group": "vegetation",
+   "file": "NDVI_DATA_INDIA_\\NDVI_Fire_Susceptibility_Outputs\\F7_CVSI_k8.tif",
+   "band": 1,
+   "step": "Step 2 (NDVI)",
+   "nan_pct_in_population": 0.21784
+  },
+  {
+   "name": "ndvi_lisa",
+   "group": "vegetation",
+   "file": "NDVI_DATA_INDIA_\\NDVI_Fire_Susceptibility_Outputs\\F8_LISA_cluster.tif",
+   "band": 1,
+   "step": "Step 2 (NDVI)",
+   "nan_pct_in_population": 0.0
+  },
+  {
+   "name": "tair_level",
+   "group": "climate_levels",
+   "file": "FLDAS Noah Land Surface Model L4 Global Monthly 0.1 x 0.1 degree (MERRA-2 and CHIRPS) (FLDAS_NOAH01_C_GL_M)\\FLDAS_Outputs\\NDVI_Aligned_GeoTIFFs\\AirTemp_level_on_NDVI_grid.tif",
+   "band": 1,
+   "step": "Step 4 (FLDAS)",
+   "nan_pct_in_population": 1.13928
+  },
+  {
+   "name": "qair_level",
+   "group": "climate_levels",
+   "file": "FLDAS Noah Land Surface Model L4 Global Monthly 0.1 x 0.1 degree (MERRA-2 and CHIRPS) (FLDAS_NOAH01_C_GL_M)\\FLDAS_Outputs\\NDVI_Aligned_GeoTIFFs\\SpecificHumidity_level_on_NDVI_grid.tif",
+   "band": 1,
+   "step": "Step 4 (FLDAS)",
+   "nan_pct_in_population": 1.13928
+  },
+  {
+   "name": "rh_level",
+   "group": "climate_levels",
+   "file": "FLDAS Noah Land Surface Model L4 Global Monthly 0.1 x 0.1 degree (MERRA-2 and CHIRPS) (FLDAS_NOAH01_C_GL_M)\\FLDAS_Outputs\\NDVI_Aligned_GeoTIFFs\\RH_level_on_NDVI_grid.tif",
+   "band": 1,
+   "step": "Step 4 (FLDAS)",
+   "nan_pct_in_population": 1.13928
+  },
+  {
+   "name": "wind_level",
+   "group": "climate_levels",
+   "file": "FLDAS Noah Land Surface Model L4 Global Monthly 0.1 x 0.1 degree (MERRA-2 and CHIRPS) (FLDAS_NOAH01_C_GL_M)\\FLDAS_Outputs\\NDVI_Aligned_GeoTIFFs\\Wind_level_on_NDVI_grid.tif",
+   "band": 1,
+   "step": "Step 4 (FLDAS)",
+   "nan_pct_in_population": 1.13928
+  },
+  {
+   "name": "precip_level",
+   "group": "climate_levels",
+   "file": "FLDAS Noah Land Surface Model L4 Global Monthly 0.1 x 0.1 degree (MERRA-2 and CHIRPS) (FLDAS_NOAH01_C_GL_M)\\FLDAS_Outputs\\NDVI_Aligned_GeoTIFFs\\Precip_level_on_NDVI_grid.tif",
+   "band": 1,
+   "step": "Step 4 (FLDAS)",
+   "nan_pct_in_population": 1.13928
+  },
+  {
+   "name": "lwnet_level",
+   "group": "climate_levels",
+   "file": "FLDAS Noah Land Surface Model L4 Global Monthly 0.1 x 0.1 degree (MERRA-2 and CHIRPS) (FLDAS_NOAH01_C_GL_M)\\FLDAS_Outputs\\NDVI_Aligned_GeoTIFFs\\NetLWRadiation_level_on_NDVI_grid.tif",
+   "band": 1,
+   "step": "Step 4 (FLDAS)",
+   "nan_pct_in_population": 1.2832
+  },
+  {
+   "name": "soilm_level",
+   "group": "climate_levels",
+   "file": "FLDAS Noah Land Surface Model L4 Global Monthly 0.1 x 0.1 degree (MERRA-2 and CHIRPS) (FLDAS_NOAH01_C_GL_M)\\FLDAS_Outputs\\NDVI_Aligned_GeoTIFFs\\SoilMoisture_level_on_NDVI_grid.tif",
+   "band": 1,
+   "step": "Step 4 (FLDAS)",
+   "nan_pct_in_population": 1.2832
+  },
+  {
+   "name": "tair_sk_tau",
+   "group": "climate_trends",
+   "file": "FLDAS Noah Land Surface Model L4 Global Monthly 0.1 x 0.1 degree (MERRA-2 and CHIRPS) (FLDAS_NOAH01_C_GL_M)\\FLDAS_Outputs\\NDVI_Aligned_GeoTIFFs\\SeasonalKendall_tau_AirTemp_on_NDVI_grid.tif",
+   "band": 1,
+   "step": "Step 4 (FLDAS)",
+   "nan_pct_in_population": 1.13928
+  },
+  {
+   "name": "qair_sk_tau",
+   "group": "climate_trends",
+   "file": "FLDAS Noah Land Surface Model L4 Global Monthly 0.1 x 0.1 degree (MERRA-2 and CHIRPS) (FLDAS_NOAH01_C_GL_M)\\FLDAS_Outputs\\NDVI_Aligned_GeoTIFFs\\SeasonalKendall_tau_SpecificHumidity_on_NDVI_grid.tif",
+   "band": 1,
+   "step": "Step 4 (FLDAS)",
+   "nan_pct_in_population": 1.13928
+  },
+  {
+   "name": "rh_sk_tau",
+   "group": "climate_trends",
+   "file": "FLDAS Noah Land Surface Model L4 Global Monthly 0.1 x 0.1 degree (MERRA-2 and CHIRPS) (FLDAS_NOAH01_C_GL_M)\\FLDAS_Outputs\\NDVI_Aligned_GeoTIFFs\\SeasonalKendall_tau_RH_on_NDVI_grid.tif",
+   "band": 1,
+   "step": "Step 4 (FLDAS)",
+   "nan_pct_in_population": 1.13928
+  },
+  {
+   "name": "wind_sk_tau",
+   "group": "climate_trends",
+   "file": "FLDAS Noah Land Surface Model L4 Global Monthly 0.1 x 0.1 degree (MERRA-2 and CHIRPS) (FLDAS_NOAH01_C_GL_M)\\FLDAS_Outputs\\NDVI_Aligned_GeoTIFFs\\SeasonalKendall_tau_Wind_on_NDVI_grid.tif",
+   "band": 1,
+   "step": "Step 4 (FLDAS)",
+   "nan_pct_in_population": 1.13928
+  },
+  {
+   "name": "precip_sk_tau",
+   "group": "climate_trends",
+   "file": "FLDAS Noah Land Surface Model L4 Global Monthly 0.1 x 0.1 degree (MERRA-2 and CHIRPS) (FLDAS_NOAH01_C_GL_M)\\FLDAS_Outputs\\NDVI_Aligned_GeoTIFFs\\SeasonalKendall_tau_Precip_on_NDVI_grid.tif",
+   "band": 1,
+   "step": "Step 4 (FLDAS)",
+   "nan_pct_in_population": 1.13928
+  },
+  {
+   "name": "lwnet_sk_tau",
+   "group": "climate_trends",
+   "file": "FLDAS Noah Land Surface Model L4 Global Monthly 0.1 x 0.1 degree (MERRA-2 and CHIRPS) (FLDAS_NOAH01_C_GL_M)\\FLDAS_Outputs\\NDVI_Aligned_GeoTIFFs\\SeasonalKendall_tau_NetLWRadiation_on_NDVI_grid.tif",
+   "band": 1,
+   "step": "Step 4 (FLDAS)",
+   "nan_pct_in_population": 1.2832
+  },
+  {
+   "name": "soilm_sk_tau",
+   "group": "climate_trends",
+   "file": "FLDAS Noah Land Surface Model L4 Global Monthly 0.1 x 0.1 degree (MERRA-2 and CHIRPS) (FLDAS_NOAH01_C_GL_M)\\FLDAS_Outputs\\NDVI_Aligned_GeoTIFFs\\SeasonalKendall_tau_SoilMoisture_on_NDVI_grid.tif",
+   "band": 1,
+   "step": "Step 4 (FLDAS)",
+   "nan_pct_in_population": 1.2832
+  },
+  {
+   "name": "lst_day_level",
+   "group": "lst",
+   "file": "LST_analysis\\LST_Outputs\\NDVI_Aligned_GeoTIFFs\\LST_Day_level_on_NDVI_grid.tif",
+   "band": 1,
+   "step": "Step 3 (LST)",
+   "nan_pct_in_population": 0.03908
+  },
+  {
+   "name": "lst_night_level",
+   "group": "lst",
+   "file": "LST_analysis\\LST_Outputs\\NDVI_Aligned_GeoTIFFs\\LST_Night_level_on_NDVI_grid.tif",
+   "band": 1,
+   "step": "Step 3 (LST)",
+   "nan_pct_in_population": 0.03913
+  },
+  {
+   "name": "lst_dtr_level",
+   "group": "lst",
+   "file": "LST_analysis\\LST_Outputs\\NDVI_Aligned_GeoTIFFs\\DTR_level_on_NDVI_grid.tif",
+   "band": 1,
+   "step": "Step 3 (LST)",
+   "nan_pct_in_population": 0.03913
+  },
+  {
+   "name": "lst_day_sk_tau",
+   "group": "lst",
+   "file": "LST_analysis\\LST_Outputs\\NDVI_Aligned_GeoTIFFs\\SeasonalKendall_tau_LST_Day_on_NDVI_grid.tif",
+   "band": 1,
+   "step": "Step 3 (LST)",
+   "nan_pct_in_population": 0.03908
+  },
+  {
+   "name": "lst_night_sk_tau",
+   "group": "lst",
+   "file": "LST_analysis\\LST_Outputs\\NDVI_Aligned_GeoTIFFs\\SeasonalKendall_tau_LST_Night_on_NDVI_grid.tif",
+   "band": 1,
+   "step": "Step 3 (LST)",
+   "nan_pct_in_population": 0.0392
+  },
+  {
+   "name": "lst_dtr_sk_tau",
+   "group": "lst",
+   "file": "LST_analysis\\LST_Outputs\\NDVI_Aligned_GeoTIFFs\\SeasonalKendall_tau_DTR_on_NDVI_grid.tif",
+   "band": 1,
+   "step": "Step 3 (LST)",
+   "nan_pct_in_population": 0.03927
+  },
+  {
+   "name": "elevation",
+   "group": "terrain",
+   "file": "Terrain_Elevation_Slope_Aspect_Analysis\\Terrain_Outputs\\T1_Elevation_native_1km.tif",
+   "band": 1,
+   "step": "Step 5a (terrain)",
+   "nan_pct_in_population": 0.00111
+  },
+  {
+   "name": "slope",
+   "group": "terrain",
+   "file": "Terrain_Elevation_Slope_Aspect_Analysis\\Terrain_Outputs\\T2_Slope_native_1km.tif",
+   "band": 1,
+   "step": "Step 5a (terrain)",
+   "nan_pct_in_population": 0.00111
+  },
+  {
+   "name": "aspect_sin",
+   "group": "terrain",
+   "file": "Terrain_Elevation_Slope_Aspect_Analysis\\Terrain_Outputs\\T3_Aspect_native_1km.tif",
+   "band": 1,
+   "step": "Step 5a (terrain)",
+   "transform": "sin(radians(aspect_deg))",
+   "nan_pct_in_population": 0.10512
+  },
+  {
+   "name": "aspect_cos",
+   "group": "terrain",
+   "file": "Terrain_Elevation_Slope_Aspect_Analysis\\Terrain_Outputs\\T3_Aspect_native_1km.tif",
+   "band": 1,
+   "step": "Step 5a (terrain)",
+   "transform": "cos(radians(aspect_deg))",
+   "nan_pct_in_population": 0.10512
+  },
+  {
+   "name": "dist_roads",
+   "group": "human",
+   "file": "Distance_Roads_Railways_Waterways_Analysis\\Accessibility_Outputs\\D1_Distance_to_Roads_native_1km.tif",
+   "band": 1,
+   "step": "Step 5b (accessibility)",
+   "nan_pct_in_population": 0.0
+  },
+  {
+   "name": "dist_railways",
+   "group": "human",
+   "file": "Distance_Roads_Railways_Waterways_Analysis\\Accessibility_Outputs\\D2_Distance_to_Railways_native_1km.tif",
+   "band": 1,
+   "step": "Step 5b (accessibility)",
+   "nan_pct_in_population": 0.0
+  },
+  {
+   "name": "dist_waterways",
+   "group": "human",
+   "file": "Distance_Roads_Railways_Waterways_Analysis\\Accessibility_Outputs\\D3_Distance_to_Waterways_native_1km.tif",
+   "band": 1,
+   "step": "Step 5b (accessibility)",
+   "nan_pct_in_population": 0.0
+  },
+  {
+   "name": "lc2001_10",
+   "group": "landcover",
+   "file": "FLDAS Noah Land Surface Model L4 Global Monthly 0.1 x 0.1 degree (MERRA-2 and CHIRPS) (FLDAS_NOAH01_C_GL_M)\\FLDAS_Outputs\\LandCover_22Class_Fractions_2001.tif",
+   "band": 1,
+   "band_description": "LC22_10_cropland_rainfed",
+   "step": "Step 4 (land cover, 2001)",
+   "nan_pct_in_population": 0.0
+  },
+  {
+   "name": "lc2001_20",
+   "group": "landcover",
+   "file": "FLDAS Noah Land Surface Model L4 Global Monthly 0.1 x 0.1 degree (MERRA-2 and CHIRPS) (FLDAS_NOAH01_C_GL_M)\\FLDAS_Outputs\\LandCover_22Class_Fractions_2001.tif",
+   "band": 2,
+   "band_description": "LC22_20_cropland_irrigated",
+   "step": "Step 4 (land cover, 2001)",
+   "nan_pct_in_population": 0.0
+  },
+  {
+   "name": "lc2001_30",
+   "group": "landcover",
+   "file": "FLDAS Noah Land Surface Model L4 Global Monthly 0.1 x 0.1 degree (MERRA-2 and CHIRPS) (FLDAS_NOAH01_C_GL_M)\\FLDAS_Outputs\\LandCover_22Class_Fractions_2001.tif",
+   "band": 3,
+   "band_description": "LC22_30_mosaic_cropland",
+   "step": "Step 4 (land cover, 2001)",
+   "nan_pct_in_population": 0.0
+  },
+  {
+   "name": "lc2001_40",
+   "group": "landcover",
+   "file": "FLDAS Noah Land Surface Model L4 Global Monthly 0.1 x 0.1 degree (MERRA-2 and CHIRPS) (FLDAS_NOAH01_C_GL_M)\\FLDAS_Outputs\\LandCover_22Class_Fractions_2001.tif",
+   "band": 4,
+   "band_description": "LC22_40_mosaic_natural_vegetation",
+   "step": "Step 4 (land cover, 2001)",
+   "nan_pct_in_population": 0.0
+  },
+  {
+   "name": "lc2001_50",
+   "group": "landcover",
+   "file": "FLDAS Noah Land Surface Model L4 Global Monthly 0.1 x 0.1 degree (MERRA-2 and CHIRPS) (FLDAS_NOAH01_C_GL_M)\\FLDAS_Outputs\\LandCover_22Class_Fractions_2001.tif",
+   "band": 5,
+   "band_description": "LC22_50_tree_broadleaved_evergreen",
+   "step": "Step 4 (land cover, 2001)",
+   "nan_pct_in_population": 0.0
+  },
+  {
+   "name": "lc2001_60",
+   "group": "landcover",
+   "file": "FLDAS Noah Land Surface Model L4 Global Monthly 0.1 x 0.1 degree (MERRA-2 and CHIRPS) (FLDAS_NOAH01_C_GL_M)\\FLDAS_Outputs\\LandCover_22Class_Fractions_2001.tif",
+   "band": 6,
+   "band_description": "LC22_60_tree_broadleaved_deciduous",
+   "step": "Step 4 (land cover, 2001)",
+   "nan_pct_in_population": 0.0
+  },
+  {
+   "name": "lc2001_70",
+   "group": "landcover",
+   "file": "FLDAS Noah Land Surface Model L4 Global Monthly 0.1 x 0.1 degree (MERRA-2 and CHIRPS) (FLDAS_NOAH01_C_GL_M)\\FLDAS_Outputs\\LandCover_22Class_Fractions_2001.tif",
+   "band": 7,
+   "band_description": "LC22_70_tree_needleleaved_evergreen",
+   "step": "Step 4 (land cover, 2001)",
+   "nan_pct_in_population": 0.0
+  },
+  {
+   "name": "lc2001_80",
+   "group": "landcover",
+   "file": "FLDAS Noah Land Surface Model L4 Global Monthly 0.1 x 0.1 degree (MERRA-2 and CHIRPS) (FLDAS_NOAH01_C_GL_M)\\FLDAS_Outputs\\LandCover_22Class_Fractions_2001.tif",
+   "band": 8,
+   "band_description": "LC22_80_tree_needleleaved_deciduous",
+   "step": "Step 4 (land cover, 2001)",
+   "nan_pct_in_population": 0.0
+  },
+  {
+   "name": "lc2001_90",
+   "group": "landcover",
+   "file": "FLDAS Noah Land Surface Model L4 Global Monthly 0.1 x 0.1 degree (MERRA-2 and CHIRPS) (FLDAS_NOAH01_C_GL_M)\\FLDAS_Outputs\\LandCover_22Class_Fractions_2001.tif",
+   "band": 9,
+   "band_description": "LC22_90_tree_mixed",
+   "step": "Step 4 (land cover, 2001)",
+   "nan_pct_in_population": 0.0
+  },
+  {
+   "name": "lc2001_100",
+   "group": "landcover",
+   "file": "FLDAS Noah Land Surface Model L4 Global Monthly 0.1 x 0.1 degree (MERRA-2 and CHIRPS) (FLDAS_NOAH01_C_GL_M)\\FLDAS_Outputs\\LandCover_22Class_Fractions_2001.tif",
+   "band": 10,
+   "band_description": "LC22_100_mosaic_tree_and_shrub",
+   "step": "Step 4 (land cover, 2001)",
+   "nan_pct_in_population": 0.0
+  },
+  {
+   "name": "lc2001_110",
+   "group": "landcover",
+   "file": "FLDAS Noah Land Surface Model L4 Global Monthly 0.1 x 0.1 degree (MERRA-2 and CHIRPS) (FLDAS_NOAH01_C_GL_M)\\FLDAS_Outputs\\LandCover_22Class_Fractions_2001.tif",
+   "band": 11,
+   "band_description": "LC22_110_mosaic_herbaceous",
+   "step": "Step 4 (land cover, 2001)",
+   "nan_pct_in_population": 0.0
+  },
+  {
+   "name": "lc2001_120",
+   "group": "landcover",
+   "file": "FLDAS Noah Land Surface Model L4 Global Monthly 0.1 x 0.1 degree (MERRA-2 and CHIRPS) (FLDAS_NOAH01_C_GL_M)\\FLDAS_Outputs\\LandCover_22Class_Fractions_2001.tif",
+   "band": 12,
+   "band_description": "LC22_120_shrubland",
+   "step": "Step 4 (land cover, 2001)",
+   "nan_pct_in_population": 0.0
+  },
+  {
+   "name": "lc2001_130",
+   "group": "landcover",
+   "file": "FLDAS Noah Land Surface Model L4 Global Monthly 0.1 x 0.1 degree (MERRA-2 and CHIRPS) (FLDAS_NOAH01_C_GL_M)\\FLDAS_Outputs\\LandCover_22Class_Fractions_2001.tif",
+   "band": 13,
+   "band_description": "LC22_130_grassland",
+   "step": "Step 4 (land cover, 2001)",
+   "nan_pct_in_population": 0.0
+  },
+  {
+   "name": "lc2001_150",
+   "group": "landcover",
+   "file": "FLDAS Noah Land Surface Model L4 Global Monthly 0.1 x 0.1 degree (MERRA-2 and CHIRPS) (FLDAS_NOAH01_C_GL_M)\\FLDAS_Outputs\\LandCover_22Class_Fractions_2001.tif",
+   "band": 15,
+   "band_description": "LC22_150_sparse_vegetation",
+   "step": "Step 4 (land cover, 2001)",
+   "nan_pct_in_population": 0.0
+  },
+  {
+   "name": "lc2001_160",
+   "group": "landcover",
+   "file": "FLDAS Noah Land Surface Model L4 Global Monthly 0.1 x 0.1 degree (MERRA-2 and CHIRPS) (FLDAS_NOAH01_C_GL_M)\\FLDAS_Outputs\\LandCover_22Class_Fractions_2001.tif",
+   "band": 16,
+   "band_description": "LC22_160_tree_flooded_fresh_or_brakish_water",
+   "step": "Step 4 (land cover, 2001)",
+   "nan_pct_in_population": 0.0
+  },
+  {
+   "name": "lc2001_170",
+   "group": "landcover",
+   "file": "FLDAS Noah Land Surface Model L4 Global Monthly 0.1 x 0.1 degree (MERRA-2 and CHIRPS) (FLDAS_NOAH01_C_GL_M)\\FLDAS_Outputs\\LandCover_22Class_Fractions_2001.tif",
+   "band": 17,
+   "band_description": "LC22_170_tree_flooded_saline_water",
+   "step": "Step 4 (land cover, 2001)",
+   "nan_pct_in_population": 0.0
+  },
+  {
+   "name": "lc2001_180",
+   "group": "landcover",
+   "file": "FLDAS Noah Land Surface Model L4 Global Monthly 0.1 x 0.1 degree (MERRA-2 and CHIRPS) (FLDAS_NOAH01_C_GL_M)\\FLDAS_Outputs\\LandCover_22Class_Fractions_2001.tif",
+   "band": 18,
+   "band_description": "LC22_180_shrub_or_herbaceous_flooded",
+   "step": "Step 4 (land cover, 2001)",
+   "nan_pct_in_population": 0.0
+  },
+  {
+   "name": "lc2001_190",
+   "group": "landcover",
+   "file": "FLDAS Noah Land Surface Model L4 Global Monthly 0.1 x 0.1 degree (MERRA-2 and CHIRPS) (FLDAS_NOAH01_C_GL_M)\\FLDAS_Outputs\\LandCover_22Class_Fractions_2001.tif",
+   "band": 19,
+   "band_description": "LC22_190_urban",
+   "step": "Step 4 (land cover, 2001)",
+   "nan_pct_in_population": 0.0
+  },
+  {
+   "name": "lc2001_200",
+   "group": "landcover",
+   "file": "FLDAS Noah Land Surface Model L4 Global Monthly 0.1 x 0.1 degree (MERRA-2 and CHIRPS) (FLDAS_NOAH01_C_GL_M)\\FLDAS_Outputs\\LandCover_22Class_Fractions_2001.tif",
+   "band": 20,
+   "band_description": "LC22_200_bare_areas",
+   "step": "Step 4 (land cover, 2001)",
+   "nan_pct_in_population": 0.0
+  },
+  {
+   "name": "lc2001_210",
+   "group": "landcover",
+   "file": "FLDAS Noah Land Surface Model L4 Global Monthly 0.1 x 0.1 degree (MERRA-2 and CHIRPS) (FLDAS_NOAH01_C_GL_M)\\FLDAS_Outputs\\LandCover_22Class_Fractions_2001.tif",
+   "band": 21,
+   "band_description": "LC22_210_water",
+   "step": "Step 4 (land cover, 2001)",
+   "nan_pct_in_population": 0.0
+  },
+  {
+   "name": "lc2001_220",
+   "group": "landcover",
+   "file": "FLDAS Noah Land Surface Model L4 Global Monthly 0.1 x 0.1 degree (MERRA-2 and CHIRPS) (FLDAS_NOAH01_C_GL_M)\\FLDAS_Outputs\\LandCover_22Class_Fractions_2001.tif",
+   "band": 22,
+   "band_description": "LC22_220_snow_and_ice",
+   "step": "Step 4 (land cover, 2001)",
+   "nan_pct_in_population": 0.0
+  },
+  {
+   "name": "forest_frac_baseline",
+   "group": "landcover",
+   "file": "Forest fire Extraction in INDIA(2000-2022)\\Forest_Fire_Outputs\\lulc_extracted\\ESACCI-LC-L4-LCCS-Map-300m-P1Y-2001-v2.0.7cds.area-subset.37.5.98.6.67.5.nc",
+   "band": "lccs_class",
+   "step": "Step 6 (this notebook): LULC 2001, 13 forest codes, area-average onto NDVI grid",
+   "forest_codes": [
+    50,
+    60,
+    61,
+    62,
+    70,
+    71,
+    72,
+    80,
+    81,
+    82,
+    90,
+    100,
+    110
+   ],
+   "nan_pct_in_population": 0.0
+  }
+ ],
+ "dropped_constant": [
+  "lc2001_140"
+ ],
+ "removed_from_v1": [
+  "ndvi_anomaly_mean",
+  "ndvi_trend_2x12ma",
+  "ndvi_residual_mean",
+  "ndvi_mk_tau",
+  "ndvi_cvsi_k8 (renamed ndvi_cvsi, k* train-only)",
+  "ndvi_lisa_cluster (renamed ndvi_lisa)",
+  "ndvi_below_threshold",
+  "lst_day/night_anomaly_mean",
+  "dtr_anomaly_mean",
+  "lst_day/night_mk_tau_monthly",
+  "fldas_*_anomaly (7)",
+  "fldas_*_mk_tau_monthly (7)",
+  "landcover_frac_LC22_* (2020 map, 22)",
+  "terrain_aspect (degrees)"
+ ]
+}

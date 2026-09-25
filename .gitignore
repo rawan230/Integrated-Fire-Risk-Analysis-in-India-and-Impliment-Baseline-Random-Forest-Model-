@@ -17,3 +17,6 @@ __pycache__/
 *.pyc
 .claude/
 .vscode/
+
+# ── v2 Step 7 (step7_models.py) large per-pixel prediction files ───────────
+Model_Outputs/**/*.npz

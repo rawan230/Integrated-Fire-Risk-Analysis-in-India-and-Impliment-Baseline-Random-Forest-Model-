@@ -1,0 +1,381 @@
+{
+ "provenance": {
+  "timestamp": "2026-09-24T22:28:40",
+  "script": "results\\code\\biswas_style_baseline.py",
+  "script_sha256": "091e3c6ff786ec77777444be55b4c25b4ce871e876091c59983fe0673f9d6d99",
+  "repo_commits": {
+   "Forest fire Extraction in INDIA(2000-2022)": "a01fadb",
+   "NDVI_DATA_INDIA_": "1c274d6",
+   "LST_analysis": "7e5d870",
+   "FLDAS Noah Land Surface Model L4 Global Monthly 0.1 x 0.1 degree (MERRA-2 and CHIRPS) (FLDAS_NOAH01_C_GL_M)": "4dbe755",
+   "Terrain_Elevation_Slope_Aspect_Analysis": "e48a4a9",
+   "Distance_Roads_Railways_Waterways_Analysis": "c74ab6b",
+   "Integrated_Analysis": "3fcc34c",
+   "Physics_Informed_FireRisk_Model": "cd1d298"
+  },
+  "root_commit": "fb0d8aa"
+ },
+ "label": "BISWAS-STYLE REIMPLEMENTATION (not the original Biswas et al. result)",
+ "grid": {
+  "n_cells_valid": 4630,
+  "n_presence_cells_2020": 1292,
+  "n_presence_cells_2001_2020": 2544,
+  "biswas_presence_total": 2439,
+  "n_2020_forest_fire_points": 16421,
+  "ten_percent_of_2020_points": 1642
+ },
+ "fig11_correlations_025deg": {
+  "NDVI": 0.45608562907303074,
+  "Air temperature": 0.010642877226835315,
+  "Specific humidity": 0.1661021272948049,
+  "LST night": 0.043967434239044784,
+  "LST day": -0.11772400418356295,
+  "Distance to roads": -0.04141475888919452,
+  "Slope": 0.2228564800337067,
+  "Distance to railways": 0.01131086835726702,
+  "Soil moisture": 0.38864336303385627,
+  "Precipitation": 0.40197576932566187,
+  "Near-surface wind speed": -0.3629630479702499,
+  "Elevation": -0.02917222445216028,
+  "Net longwave radiation flux": 0.36065538246708717,
+  "Aspect": 0.08023464799986349,
+  "Distance to waterways": -0.07362700762290841
+ },
+ "fig11_biswas_reported": {
+  "NDVI": 0.43,
+  "Slope": 0.4,
+  "Near-surface wind speed": -0.32,
+  "Net longwave radiation flux": 0.28,
+  "Soil moisture": 0.27
+ },
+ "replica_2020_presences_025deg": {
+  "runs": [
+   {
+    "seed": 0,
+    "n_train_presence": 969,
+    "n_test_presence": 323,
+    "n_background": 3338,
+    "train_auc": 0.9020893968258679,
+    "test_auc": 0.8915175101606976,
+    "permutation_importance_pct": {
+     "NDVI": 18.98253904709561,
+     "Air temperature": 13.157955782132374,
+     "Specific humidity": 3.0969585041755674,
+     "LST night": 14.280157120540249,
+     "LST day": 8.135475123695924,
+     "Distance to roads": 1.8625680564167462,
+     "Slope": 5.805840488297004,
+     "Distance to railways": 2.447280070166576,
+     "Soil moisture": 7.475641150257158,
+     "Precipitation": 2.664346186627676,
+     "Near-surface wind speed": 2.7074417646843703,
+     "Elevation": 10.71539484996315,
+     "Net longwave radiation flux": 5.418205142181111,
+     "Aspect": 0.3986362317370004,
+     "Distance to waterways": 2.8515604820294813
+    },
+    "jackknife": {
+     "NDVI": {
+      "only_test_auc": 0.7993626260696326,
+      "without_test_auc": 0.8876118325984489
+     },
+     "Air temperature": {
+      "only_test_auc": 0.7335021990884589,
+      "without_test_auc": 0.8904239946427942
+     },
+     "Specific humidity": {
+      "only_test_auc": 0.7233526313934485,
+      "without_test_auc": 0.889997347366937
+     },
+     "LST night": {
+      "only_test_auc": 0.571716160842313,
+      "without_test_auc": 0.891342213779965
+     },
+     "LST day": {
+      "only_test_auc": 0.7133561002213,
+      "without_test_auc": 0.8885217042889182
+     },
+     "Distance to roads": {
+      "only_test_auc": 0.6668385622357801,
+      "without_test_auc": 0.8921009039357284
+     },
+     "Slope": {
+      "only_test_auc": 0.793601960351483,
+      "without_test_auc": 0.8891978474717439
+     },
+     "Distance to railways": {
+      "only_test_auc": 0.6683285814720072,
+      "without_test_auc": 0.8935468672032527
+     },
+     "Soil moisture": {
+      "only_test_auc": 0.75817678779121,
+      "without_test_auc": 0.8911251801657246
+     },
+     "Precipitation": {
+      "only_test_auc": 0.7505439752767178,
+      "without_test_auc": 0.8871935327692932
+     },
+     "Near-surface wind speed": {
+      "only_test_auc": 0.6286304436946171,
+      "without_test_auc": 0.8831700634591447
+     },
+     "Elevation": {
+      "only_test_auc": 0.6974959514883496,
+      "without_test_auc": 0.8936090093064757
+     },
+     "Net longwave radiation flux": {
+      "only_test_auc": 0.7257223787626117,
+      "without_test_auc": 0.8828380205792387
+     },
+     "Aspect": {
+      "only_test_auc": 0.6096543786067926,
+      "without_test_auc": 0.8941117110967247
+     },
+     "Distance to waterways": {
+      "only_test_auc": 0.5661920061140409,
+      "without_test_auc": 0.8924051219932961
+     }
+    }
+   },
+   {
+    "seed": 1,
+    "n_train_presence": 969,
+    "n_test_presence": 323,
+    "n_background": 3338,
+    "train_auc": 0.9070490168253608,
+    "test_auc": 0.8770087202993209
+   },
+   {
+    "seed": 2,
+    "n_train_presence": 969,
+    "n_test_presence": 323,
+    "n_background": 3338,
+    "train_auc": 0.8961942444664157,
+    "test_auc": 0.9121171536319742
+   },
+   {
+    "seed": 3,
+    "n_train_presence": 969,
+    "n_test_presence": 323,
+    "n_background": 3338,
+    "train_auc": 0.8998365137105266,
+    "test_auc": 0.8976575209567288
+   },
+   {
+    "seed": 4,
+    "n_train_presence": 969,
+    "n_test_presence": 323,
+    "n_background": 3338,
+    "train_auc": 0.9023456943560749,
+    "test_auc": 0.8922084932487706
+   },
+   {
+    "seed": 5,
+    "n_train_presence": 969,
+    "n_test_presence": 323,
+    "n_background": 3338,
+    "train_auc": 0.9048836273180396,
+    "test_auc": 0.8832053082341069
+   },
+   {
+    "seed": 6,
+    "n_train_presence": 969,
+    "n_test_presence": 323,
+    "n_background": 3338,
+    "train_auc": 0.8964694010428743,
+    "test_auc": 0.9034246791334238
+   },
+   {
+    "seed": 7,
+    "n_train_presence": 969,
+    "n_test_presence": 323,
+    "n_background": 3338,
+    "train_auc": 0.9011922008877973,
+    "test_auc": 0.892725107450189
+   },
+   {
+    "seed": 8,
+    "n_train_presence": 969,
+    "n_test_presence": 323,
+    "n_background": 3338,
+    "train_auc": 0.9014503534061602,
+    "test_auc": 0.8935941694012284
+   },
+   {
+    "seed": 9,
+    "n_train_presence": 969,
+    "n_test_presence": 323,
+    "n_background": 3338,
+    "train_auc": 0.9052954346886495,
+    "test_auc": 0.886565619278521
+   }
+  ],
+  "summary": {
+   "train_auc_mean": 0.9016805883527768,
+   "train_auc_sd": 0.0033720123283373627,
+   "test_auc_mean": 0.893002428179496,
+   "test_auc_sd": 0.009445332557938233,
+   "test_auc_min": 0.8770087202993209,
+   "test_auc_max": 0.9121171536319742
+  }
+ },
+ "variant_2001_2020_presences_025deg": {
+  "runs": [
+   {
+    "seed": 0,
+    "n_train_presence": 1908,
+    "n_test_presence": 636,
+    "n_background": 2086,
+    "train_auc": 0.9487486206335136,
+    "test_auc": 0.9403359925710185,
+    "permutation_importance_pct": {
+     "NDVI": 20.03166513634418,
+     "Air temperature": 5.590919971126438,
+     "Specific humidity": 7.503783965070097,
+     "LST night": 4.289299803558435,
+     "LST day": 5.6105053212845215,
+     "Distance to roads": 4.017668111302695,
+     "Slope": 13.853532750716413,
+     "Distance to railways": 2.696794861534052,
+     "Soil moisture": 2.1688368994431446,
+     "Precipitation": 3.256977541402238,
+     "Near-surface wind speed": 3.531459881769044,
+     "Elevation": 18.296042364270054,
+     "Net longwave radiation flux": 7.715610062033636,
+     "Aspect": 0.2825938978040241,
+     "Distance to waterways": 1.1543094323410286
+    },
+    "jackknife": {
+     "NDVI": {
+      "only_test_auc": 0.815961606879044,
+      "without_test_auc": 0.9362069381380512
+     },
+     "Air temperature": {
+      "only_test_auc": 0.7773363302519944,
+      "without_test_auc": 0.9402417735487255
+     },
+     "Specific humidity": {
+      "only_test_auc": 0.7220452160856745,
+      "without_test_auc": 0.9374860555847007
+     },
+     "LST night": {
+      "only_test_auc": 0.6309177083521772,
+      "without_test_auc": 0.9402553410879357
+     },
+     "LST day": {
+      "only_test_auc": 0.7447636836170457,
+      "without_test_auc": 0.9356830803741023
+     },
+     "Distance to roads": {
+      "only_test_auc": 0.6290016703148271,
+      "without_test_auc": 0.9388134131707639
+     },
+     "Slope": {
+      "only_test_auc": 0.8289246368422004,
+      "without_test_auc": 0.9363727636172869
+     },
+     "Distance to railways": {
+      "only_test_auc": 0.6694988904767936,
+      "without_test_auc": 0.9407633700561394
+     },
+     "Soil moisture": {
+      "only_test_auc": 0.8148882637770823,
+      "without_test_auc": 0.9416656114136169
+     },
+     "Precipitation": {
+      "only_test_auc": 0.83405392041583,
+      "without_test_auc": 0.9352504266237329
+     },
+     "Near-surface wind speed": {
+      "only_test_auc": 0.6211332513250962,
+      "without_test_auc": 0.9354765522772359
+     },
+     "Elevation": {
+      "only_test_auc": 0.7291203109076986,
+      "without_test_auc": 0.939216670586178
+     },
+     "Net longwave radiation flux": {
+      "only_test_auc": 0.7654609646821879,
+      "without_test_auc": 0.9377664513950444
+     },
+     "Aspect": {
+      "only_test_auc": 0.5833495390051677,
+      "without_test_auc": 0.941088990997184
+     },
+     "Distance to waterways": {
+      "only_test_auc": 0.5928588764871531,
+      "without_test_auc": 0.9409254267744834
+     }
+    }
+   },
+   {
+    "seed": 1,
+    "n_train_presence": 1908,
+    "n_test_presence": 636,
+    "n_background": 2086,
+    "train_auc": 0.9434705966300243,
+    "test_auc": 0.9561097644072191
+   },
+   {
+    "seed": 2,
+    "n_train_presence": 1908,
+    "n_test_presence": 636,
+    "n_background": 2086,
+    "train_auc": 0.9456034640440112,
+    "test_auc": 0.9479730096419979
+   }
+  ],
+  "summary": {
+   "train_auc_mean": 0.945940893769183,
+   "train_auc_sd": 0.0021679142756613635,
+   "test_auc_mean": 0.9481395888734118,
+   "test_auc_sd": 0.006440692559312869,
+   "test_auc_min": 0.9403359925710185,
+   "test_auc_max": 0.9561097644072191
+  }
+ },
+ "biswas_reported": {
+  "train_auc": 0.894,
+  "test_auc": 0.879,
+  "n_train_presence": 1830,
+  "n_test_presence": 609,
+  "points_total": 11360,
+  "permutation_importance_pct": {
+   "NDVI": 22.3,
+   "Air temperature": 13.1,
+   "Specific humidity": 13.0,
+   "LST night": 10.1,
+   "LST day": 9.6,
+   "Distance to roads": 5.7,
+   "Slope": 5.6,
+   "Distance to railways": 4.6,
+   "Soil moisture": 3.8,
+   "Precipitation": 3.6,
+   "Near-surface wind speed": 2.4,
+   "Elevation": 2.4,
+   "Net longwave radiation flux": 1.8,
+   "Aspect": 1.7,
+   "Distance to waterways": 0.5
+  },
+  "percent_contribution_pct": {
+   "NDVI": 28.4,
+   "Air temperature": 3.8,
+   "Specific humidity": 15.0,
+   "LST night": 8.9,
+   "LST day": 4.5,
+   "Distance to roads": 2.6,
+   "Slope": 16.7,
+   "Distance to railways": 4.9,
+   "Soil moisture": 0.9,
+   "Precipitation": 1.7,
+   "Near-surface wind speed": 4.3,
+   "Elevation": 2.0,
+   "Net longwave radiation flux": 0.6,
+   "Aspect": 3.8,
+   "Distance to waterways": 1.7
+  },
+  "source": "Biswas et al. 2025 Table 3 (p.4870) and p.4865; verified from the PDF by text extraction"
+ },
+ "percent_contribution_this_study": "NOT COMPUTED: path-dependent MaxEnt-optimiser quantity, not produced by elapid",
+ "runtime_sec": 169.63952660560608
+}

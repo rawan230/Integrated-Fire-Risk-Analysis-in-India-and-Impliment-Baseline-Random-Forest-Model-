@@ -93,7 +93,67 @@
 > document refers to a specific, explicitly-labeled historical table (kept for the
 > before/after comparison it documents), not the current state.
 
-## Current Headline Results (as of 2026-08-23 — final, validated numbers)
+## Current Results — v2 pipeline (audit 2026-09-24/25, pipeline code updated 2026-09-25)
+
+**These are the numbers to cite.** Paper numbers come only from the project-level
+`results/FINAL_MANUSCRIPT_NUMBERS.md`. The files below are in `Model_Outputs/`
+(`FINAL_METRICS.csv`, `CLASSICAL_METRICS.csv`, `B1_B2_SUMMARY.csv`, `PAIRED_*.csv`,
+`BISWAS_STYLE_BASELINE.json`).
+
+**What changed in v2 (Step 6 + Step 7 code in this repo):**
+- **Label.** Fire points are rasterised to their *containing* pixel (`floor`). The old
+  `round` rule put 74.9% of points in a neighbouring pixel. The v2 label has 268,411 fire
+  pixels out of 4,160,768 (prevalence 6.45%).
+- **Features.** 55 v2 features:
+  - 2001–2020 climatological *levels* replace the degenerate anomaly-means;
+  - Seasonal Kendall τ (FDR-controlled) replaces Mann–Kendall on seasonal series;
+  - 2001 land-cover fractions replace the in-window 2020 ones;
+  - aspect is encoded as sin/cos;
+  - the θ* indicator is dropped.
+- **Populations.** Every metric is reported for all pixels and for **forest pixels**
+  (`forest_frac_2001 > 0`, 1,197,538 pixels, prevalence 22.4%). Forest pixels are the
+  primary population, because forest fraction alone already gives AUC 0.91 over all pixels.
+- **Protocol.** Train/validation/test splits, a validation-chosen threshold (max-F1),
+  training-only imputation, DeLong and block-bootstrap tests, calibration (Brier, ECE),
+  and three spatial and temporal tracks.
+
+| Track (test) | Model | ROC-AUC all pixels | ROC-AUC **forest** | AP forest |
+|---|---|---:|---:|---:|
+| A — random split | **RF v2** (55 features) | **0.975** | **0.897** | 0.721 |
+| A — random split | MaxEnt v2 | 0.967 | 0.866 | 0.664 |
+| A — random split | RF, Biswas 15 predictors | 0.970 | 0.885 | 0.698 |
+| B1 — 2°×2° spatial blocks (3 folds) | RF v2 | 0.959 ± 0.014 | 0.838 ± 0.039 | 0.583 |
+| B1 — spatial blocks | MaxEnt v2 | 0.956 ± 0.012 | 0.828 ± 0.029 | 0.563 |
+| B2 — 6 held-out regions | RF v2 | 0.935 ± 0.036 | 0.782 ± 0.034 | 0.413 |
+| B2 — held-out regions | MaxEnt v2 | 0.901 ± 0.067 | 0.730 ± 0.061 | 0.351 |
+| B3 — held-out years (static map) | RF v2 | 0.965 | 0.872 | 0.282 |
+| B3 — held-out years | persistence null (ever burned in training years) | 0.807 | 0.744 | 0.146 |
+
+**Robustness checks (Track A, RF v2, forest pixels):**
+- FIRMS quality filters (confidence ≥ 30 and/or type 0) change AUC by < 0.001.
+- Removing the terrain group changes AUC by +0.0006; removing land cover −0.008;
+  removing the trend features −0.006.
+- MaxEnt training size from 50k to 500k rows: AUC 0.855 → 0.872 (forest).
+
+**Same cells as CDR-PINO (Step 8), 12 km grid.** RF with CDR-PINO's own 7 covariates
+scores 0.980 (A), 0.974 (B1) and 0.959 (B2), against CDR-PINO full physics 0.939 / 0.719 /
+0.570 (`bridge_predictions/`, rows `bridge12_*` in `FINAL_METRICS.csv`).
+
+**Biswas-style reimplementation** (0.25°, 2020 presences, MaxEnt LQHP): test AUC
+**0.893 ± 0.009** over 10 replicates, vs Biswas et al.'s 0.879. This is moderately
+comparable. The pixel-level AUCs above are *not* comparable with Biswas et al.'s AUC
+(different population, label and AUC definition).
+
+**Historical v1 numbers** (RF 0.9704, MaxEnt 0.9598, spatial CV 0.9498 / 0.9465)
+reproduce bit-exactly (rows `repro` in `FINAL_METRICS.csv`). They use the shifted label and
+the degenerate features, so they are superseded. They are kept below for the record.
+
+**Reproduce.** `Step7_FireRisk_Susceptibility_Model.ipynb` runs with `RUN_MODELS = False`
+by default: it loads the verified result files and rebuilds every table and figure. Full
+refit: `python step7_models.py trackA`, then `B1`, `B2`, `B3`, `maxent_n`, `bridge`, `biswas`,
+`map`, and `analyze` last. This takes about 16 CPU-hours and needs the v2 Step 6 parquet.
+
+## Historical headline results (v1, 2026-08-23 — superseded, kept for the record)
 
 Both models below are trained on Step 6's 57-feature, leakage-fixed table
 (4,161,009 pixels), both tuned via a genuine validation split rather than
@@ -195,7 +255,34 @@ reasoning.
   current (2022) 8.0% → 10.7%. Band/column counts are unchanged (54 layers, 56 columns) —
   this only changes the *values* of four existing features, not their count.
 
-### What it produces
+### What it produces — v2 (notebook rerun 2026-09-25)
+
+1. `Integrated_Outputs/Integrated_FireRisk_Pixels.parquet` has **4,160,768 in-India pixels
+   × 60 columns**: `lon`, `lat`, `grid_index`, `fire_count`, `fire_ever` and the
+   **55 v2 features** in contract order (`FEATURE_LIST_v2.json`). The features are:
+   - NDVI (6): mean, climatological June, Seasonal Kendall τ, Sen slope, CVSI k*=8, LISA;
+   - 2001–2020 climatological levels and Seasonal Kendall τ for the 7 FLDAS variables (14)
+     and for LST Day/Night/DTR (6);
+   - elevation, slope, aspect sin/cos (4);
+   - distance to roads/railways/waterways (3);
+   - 21 land-cover fractions from the 2001 map;
+   - `forest_frac_baseline` (2001).
+2. **Label.** `fire_ever` comes from Step 1's points rasterised to their *containing*
+   pixel: 268,411 fire pixels (prevalence 6.45%). Forest pixels (`forest_frac_baseline > 0`)
+   number 1,197,538, with prevalence 22.3%. The notebook checks this label against Step 2's
+   corrected F10 raster and stops if they differ (`REQUIRE_COMPLETE_V2 = True`).
+3. `Integrated_FireRisk_Stack.tif` is the same 55 features as a GeoTIFF stack.
+4. `V2_vs_audit_reference_check.csv` compares every column with the independent audit
+   table (`results/recalculated/FEATURE_TABLE_v2.parquet`):
+   - NaN patterns agree 100%.
+   - NDVI, LST, FLDAS, distance and land-cover columns agree to r ≥ 0.99999, most of them
+     bit-exactly.
+   - Slope (r 0.99999) and aspect sin/cos (r 0.9995) differ only at flat or edge pixels.
+
+The v1 table (57 features, shifted label) is archived outside the repository and is no
+longer produced.
+
+### What it produced — historical v1 (superseded)
 
 1. `Integrated_FireRisk_Stack.tif` — 59-band GeoTIFF, one band per feature, identical
    pixel grid across bands.
