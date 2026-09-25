@@ -1,5 +1,21 @@
 # 🔥🌿🌡️🗺️🎯 Integrated Fire-Risk Alignment + Susceptibility Model
 
+<!-- AUDIT-UPDATE-2026-09-25 -->
+> ### Audit update (2026-09-25)
+> This repository's step was recalculated independently from the raw data in a full end-to-end audit.
+> **Corrected results, reproduction checks and audit code: [`AUDIT_2026-09-25.md`](AUDIT_2026-09-25.md)** and `audit_2026-09-25/`.
+> Earlier text below is kept for the record (it also remains in the git history). Statements superseded by the audit:
+>
+> - **'RF 0.950 vs CDR 0.751 on the same fold scheme'**: not the same folds, grid, label or features. On CDR-PINO's own cells, splits and covariates, RF scores **0.974** (B1), 0.959 (B2) and 0.980 (A), vs CDR-PINO 0.719 / 0.570 / 0.939.
+> - **CDR-PINO historical numbers** (0.9398, 0.7510 ± 0.0182, 0.6187 ± 0.0680, 0.8960) reproduce bit-exactly. Under the unified protocol (3 seeds), full CDR scores 0.939 / 0.719 / 0.570 / 0.893 (A / B1 / B2 / B3), and Track A and B1–B3 were separate models trained under different protocols.
+> - **Feature count**: the v1 parquet has **57** features (61 columns). v2 has 55 (a different set).
+> - **Grid spacing** is 1/120° (≈0.93 km), not 0.01°.
+> - **Anomaly-mean features** (climate, LST, NDVI) are degenerate: with a 2001–2020 baseline they equal the residue of the 26 out-of-baseline months. v2 replaces them with climatological levels.
+> - **RF 0.9704 / MaxEnt 0.9598** reproduce exactly (v1, all pixels). v2: RF 0.975 all / **0.897 forest pixels** (the primary population, because forest fraction alone gives AUC 0.91).
+> - **MaxEnt 150k subsample**: sensitivity from 50k to 500k gives AUC 0.964 → 0.969 (all) and 0.855 → 0.872 (forest); fit time grows as about n^1.6.
+<!-- AUDIT-UPDATE-2026-09-25 -->
+
+
 **Notebooks:** [`Step6_Integrated_FireRisk_Analysis.ipynb`](Step6_Integrated_FireRisk_Analysis.ipynb), [`Step7_FireRisk_Susceptibility_Model.ipynb`](Step7_FireRisk_Susceptibility_Model.ipynb)
 **Kernel:** `firerisk-anaconda3` (Python 3.12.7, base `C:\Users\Admin\anaconda3\python.exe`)
 

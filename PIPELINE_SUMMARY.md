@@ -1,5 +1,23 @@
 # Pipeline Technical Report — India Forest-Fire-Risk Preprocessing
 
+<!-- AUDIT-UPDATE-2026-09-25 -->
+> ### Audit update (2026-09-25)
+> This repository's step was recalculated independently from the raw data in a full end-to-end audit.
+> **Corrected results, reproduction checks and audit code: [`AUDIT_2026-09-25.md`](AUDIT_2026-09-25.md)** and `audit_2026-09-25/`.
+> Earlier text below is kept for the record (it also remains in the git history). Statements superseded by the audit:
+>
+> - **'Replicates Biswas's MaxEnt and beats it (0.9576 vs 0.879)'**: 0.9576 cannot be traced to any output, and the comparison is not valid (different population, predictors, labels and AUC definition). A Biswas-style reimplementation gives **0.893 ± 0.009** vs their 0.879 (moderately comparable).
+> - **'RF 0.950 vs CDR 0.751 on the same fold scheme'**: not the same folds, grid, label or features. On CDR-PINO's own cells, splits and covariates, RF scores **0.974** (B1), 0.959 (B2) and 0.980 (A), vs CDR-PINO 0.719 / 0.570 / 0.939.
+> - **Mann–Kendall significance counts**: reproduce, but the tests are invalid (MK on a smoothed or seasonal series). Seasonal Kendall + FDR gives NDVI 3,552,278 greening / 72,305 browning; LST day 2,435,163 cooling; night 2,080,747 warming; DTR 3,273,301 narrowing.
+> - **Fire rasterisation rule `round((lat−f)/e)`**: displaces 74.9% of points by one pixel (it rounds against the edge). The correct rule is `floor`. Correcting it raises RF AUC by +0.006 (all) / +0.011 (forest).
+> - **Feature count**: the v1 parquet has **57** features (61 columns). v2 has 55 (a different set).
+> - **Grid spacing** is 1/120° (≈0.93 km), not 0.01°.
+> - **22 land-cover fractions** come from the 2020 map, inside the label window. v2 uses the 2001 map; the measured leakage effect is small.
+> - **RF 0.9704 / MaxEnt 0.9598** reproduce exactly (v1, all pixels). v2: RF 0.975 all / **0.897 forest pixels** (the primary population, because forest fraction alone gives AUC 0.91).
+> - **MaxEnt 150k subsample**: sensitivity from 50k to 500k gives AUC 0.964 → 0.969 (all) and 0.855 → 0.872 (forest); fit time grows as about n^1.6.
+<!-- AUDIT-UPDATE-2026-09-25 -->
+
+
 Detailed mathematical reference for all 6 preprocessing steps: every feature's
 formula (with every symbol explicitly defined), why it's engineered this way, **why
 this specific method was chosen over other existing methods in the literature**,
